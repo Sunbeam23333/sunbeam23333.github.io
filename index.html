@@ -14,186 +14,349 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sunbeam23333.github.io/" />
-    <meta name="theme-color" content="#f4f1e9" />
-    <title>Haopeng Jin | Multimodal AI Researcher</title>
+    <meta
+      property="og:image"
+      content="https://sunbeam23333.github.io/assets/project-figures/hy-himmel-figure1.png"
+    />
+    <meta name="theme-color" content="#f6f2ea" />
+    <title>Haopeng Jin | Multimodal AI &amp; ML Systems</title>
     <link rel="canonical" href="https://sunbeam23333.github.io/" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,500;6..72,700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Newsreader:opsz,wght@6..72,500;6..72,700&amp;display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <a class="skip-link" href="#top">Skip to content</a>
-    <div class="ambient" aria-hidden="true">
-      <span class="glow glow-a"></span>
-      <span class="glow glow-b"></span>
-      <span class="grid"></span>
+
+    <div class="aurora-bg" aria-hidden="true">
+      <span class="aurora-beam beam-one"></span>
+      <span class="aurora-beam beam-two"></span>
+      <span class="aurora-beam beam-three"></span>
+      <span class="aurora-particle particle-one"></span>
+      <span class="aurora-particle particle-two"></span>
+      <span class="aurora-particle particle-three"></span>
+      <span class="aurora-particle particle-four"></span>
     </div>
 
-    <div class="shell">
+    <div class="site-shell">
       <header class="nav">
         <a class="brand" href="#top" aria-label="Haopeng Jin homepage">
           <span class="brand-mark">HJ</span>
           <span>Haopeng Jin</span>
         </a>
-        <nav class="nav-links" aria-label="Primary navigation">
-          <a href="#work">Work</a>
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-label="Open navigation"
+          aria-expanded="false"
+          aria-controls="primary-navigation"
+        >
+          Menu
+        </button>
+        <nav id="primary-navigation" class="nav-links" aria-label="Primary navigation">
+          <a href="#work">Research</a>
           <a href="#about">About</a>
-          <a href="https://sunbeam23333.github.io/Jason.Kim/">Full portfolio ↗</a>
+          <a href="#contact">Contact</a>
+          <a class="portfolio-link" href="https://sunbeam23333.github.io/Jason.Kim/">
+            Full portfolio ↗
+          </a>
         </nav>
       </header>
 
       <main id="top">
-        <section class="hero">
+        <section class="hero section">
           <div class="hero-copy">
-            <div class="availability"><span></span> Open to research collaboration</div>
-            <p class="eyebrow">Multimodal AI · Video Understanding · ML Systems</p>
-            <h1>Haopeng<br />Jin</h1>
-            <p class="hero-lead">
-              I build multimodal systems that connect representation learning, temporal reasoning,
-              open-world search, post-training, and efficient model infrastructure.
+            <p class="eyebrow">Multimodal AI · Video Understanding · Retrieval · ML Systems</p>
+            <h1>Building reliable multimodal intelligence across models and systems.</h1>
+            <p class="hero-text">
+              I am Haopeng Jin, an undergraduate researcher at Beijing University of Posts and
+              Telecommunications. I build multimodal systems for long-video understanding,
+              open-world search, embodied reasoning, model post-training, and efficient training
+              and inference.
             </p>
-            <div class="actions">
-              <a class="button primary" href="https://sunbeam23333.github.io/Jason.Kim/">
-                Explore research
-                <span aria-hidden="true">↗</span>
-              </a>
-              <a class="button" href="https://scholar.google.com/citations?hl=en&amp;user=7NUo_ykAAAAJ">
+            <div class="hero-actions">
+              <a class="button primary" href="#work">Explore selected work</a>
+              <a
+                class="button secondary"
+                href="https://scholar.google.com/citations?hl=en&amp;user=7NUo_ykAAAAJ"
+                target="_blank"
+                rel="noreferrer"
+              >
                 Google Scholar
               </a>
-              <a class="button" href="https://github.com/Sunbeam23333">GitHub</a>
+              <a
+                class="button secondary"
+                href="https://github.com/Sunbeam23333"
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub
+              </a>
+            </div>
+            <div class="signal-row" aria-label="Research focus">
+              <span>Long-video understanding</span>
+              <span>Open-world retrieval</span>
+              <span>VLA / Robotics</span>
+              <span>Training &amp; inference</span>
             </div>
           </div>
 
-          <aside class="focus-card" aria-label="Research focus">
-            <p class="card-label">Research constellation</p>
-            <div class="orbit">
-              <div class="orbit-ring ring-one"></div>
-              <div class="orbit-ring ring-two"></div>
-              <span class="orbit-core">Multimodal<br />Intelligence</span>
-              <span class="orbit-node node-video">Video</span>
-              <span class="orbit-node node-search">Search</span>
-              <span class="orbit-node node-vla">VLA</span>
-              <span class="orbit-node node-systems">Systems</span>
-            </div>
-            <div class="focus-list">
-              <span>Long-video understanding</span>
-              <span>Open-world retrieval</span>
-              <span>Model training &amp; inference</span>
+          <aside class="hero-visual" aria-label="Featured research figures">
+            <a
+              class="visual-main"
+              href="https://sunbeam23333.github.io/Jason.Kim/pages/hy-himmel.html"
+            >
+              <span class="visual-label">Featured · HY-Himmel</span>
+              <img
+                src="assets/project-figures/hy-himmel-figure1.png"
+                alt="HY-Himmel semantic anchor and compressed-domain motion architecture"
+                width="1970"
+                height="1120"
+                fetchpriority="high"
+                decoding="async"
+              />
+            </a>
+            <div class="visual-thumbs">
+              <a href="https://sunbeam23333.github.io/Jason.Kim/pages/vla-robotics.html">
+                <img
+                  src="assets/project-figures/robo-dopamine2-memory-panel.png"
+                  alt="Robo-Dopamine 2.0 OOD-aware temporal memory panel"
+                  width="768"
+                  height="768"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span>Robo-Dopamine 2.0</span>
+              </a>
+              <a href="https://sunbeam23333.github.io/Jason.Kim/pages/omni-iie.html">
+                <img
+                  src="assets/project-figures/omni-iie-figure1.png"
+                  alt="Omni IIE Bench construction and evaluation pipeline"
+                  width="1835"
+                  height="1050"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span>Omni IIE Bench</span>
+              </a>
             </div>
           </aside>
         </section>
 
-        <section id="work" class="section">
+        <div class="metrics" aria-label="Portfolio summary">
+          <div><strong>6</strong><span>featured research projects</span></div>
+          <div><strong>4</strong><span>multimodal research threads</span></div>
+          <div><strong>CVPR ’26</strong><span>and recent technical reports</span></div>
+          <a href="https://sunbeam23333.github.io/Jason.Kim/">
+            Detailed portfolio <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+
+        <section id="work" class="section work-section">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Selected work</p>
-              <h2>Research that moves between models and systems.</h2>
+              <p class="eyebrow">Selected research</p>
+              <h2>Projects and manuscripts</h2>
             </div>
-            <a class="text-link" href="https://sunbeam23333.github.io/Jason.Kim/#research">
-              View all projects ↗
+            <a class="text-link" href="https://sunbeam23333.github.io/Jason.Kim/">
+              View the complete portfolio ↗
             </a>
           </div>
 
-          <div class="work-grid">
+          <div class="project-grid">
             <a
-              class="work-card feature"
+              class="project-card project-card-wide"
               href="https://sunbeam23333.github.io/Jason.Kim/pages/hy-himmel.html"
             >
-              <span class="work-index">01</span>
-              <p class="work-type">Technical report · First author</p>
-              <h3>HY-Himmel</h3>
-              <p>
-                Hierarchical semantic anchors and compressed-domain motion streams for efficient
-                long-video understanding.
-              </p>
-              <span class="work-arrow" aria-hidden="true">↗</span>
+              <div class="project-image">
+                <img
+                  src="assets/project-figures/hy-himmel-figure1.png"
+                  alt="HY-Himmel semantic anchor and compressed-domain motion paths"
+                  width="1970"
+                  height="1120"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="project-copy">
+                <span class="project-number">01</span>
+                <p class="card-kicker">Technical report · First author</p>
+                <h3>HY-Himmel</h3>
+                <p>
+                  Sparse semantic anchor frames and interleaved RGB, motion-vector, and residual
+                  streams for efficient long-video understanding.
+                </p>
+                <span class="card-action">Read project details ↗</span>
+              </div>
             </a>
 
             <a
-              class="work-card"
-              href="https://sunbeam23333.github.io/Jason.Kim/pages/shotfinder.html"
+              class="project-card"
+              href="https://sunbeam23333.github.io/Jason.Kim/pages/vla-robotics.html"
             >
-              <span class="work-index">02</span>
-              <p class="work-type">Open-domain video retrieval</p>
-              <h3>ShotFinder</h3>
-              <p>
-                Imagination-driven web search that retrieves a source video and grounds the
-                remembered shot.
-              </p>
-              <span class="work-arrow" aria-hidden="true">↗</span>
+              <div class="project-image square-source">
+                <img
+                  src="assets/project-figures/robo-dopamine2-memory-panel.png"
+                  alt="Robo-Dopamine 2.0 OOD-aware temporal memory panel"
+                  width="768"
+                  height="768"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="project-copy">
+                <span class="project-number">02</span>
+                <p class="card-kicker">Ongoing · Embodied intelligence</p>
+                <h3>Robo-Dopamine 2.0</h3>
+                <p>OOD-aware temporal memory for robotic process reward modeling.</p>
+                <span class="card-action">Explore ongoing work ↗</span>
+              </div>
             </a>
 
             <a
-              class="work-card"
-              href="https://sunbeam23333.github.io/Jason.Kim/pages/rvms-bench.html"
-            >
-              <span class="work-index">03</span>
-              <p class="work-type">Benchmark · Agentic search</p>
-              <h3>RVMS-Bench + RACLO</h3>
-              <p>
-                Real-world long-video search from global, key-moment, temporal, and auditory
-                memories.
-              </p>
-              <span class="work-arrow" aria-hidden="true">↗</span>
-            </a>
-
-            <a
-              class="work-card"
+              class="project-card"
               href="https://sunbeam23333.github.io/Jason.Kim/pages/omni-iie.html"
             >
-              <span class="work-index">04</span>
-              <p class="work-type">CVPR 2026 · Image editing</p>
-              <h3>Omni IIE Bench</h3>
-              <p>
-                Practical evaluation of single-turn consistency and multi-turn coordination in
-                image editing models.
-              </p>
-              <span class="work-arrow" aria-hidden="true">↗</span>
+              <div class="project-image">
+                <img
+                  src="assets/project-figures/omni-iie-figure1.png"
+                  alt="Omni IIE Bench data construction and evaluation pipeline"
+                  width="1835"
+                  height="1050"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="project-copy">
+                <span class="project-number">03</span>
+                <p class="card-kicker">CVPR 2026 · Image editing</p>
+                <h3>Omni IIE Bench</h3>
+                <p>Practical evaluation of single-turn consistency and multi-turn coordination.</p>
+                <span class="card-action">Read benchmark details ↗</span>
+              </div>
+            </a>
+
+            <a
+              class="project-card"
+              href="https://sunbeam23333.github.io/Jason.Kim/pages/shotfinder.html"
+            >
+              <div class="project-image">
+                <img
+                  src="assets/project-figures/shotfinder-figure3.png"
+                  alt="ShotFinder open-domain video search pipeline"
+                  width="2425"
+                  height="1340"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="project-copy">
+                <span class="project-number">04</span>
+                <p class="card-kicker">Open-domain video retrieval</p>
+                <h3>ShotFinder</h3>
+                <p>Imagination-driven web search with adaptive multimodal shot localization.</p>
+                <span class="card-action">Read project details ↗</span>
+              </div>
+            </a>
+
+            <a
+              class="project-card"
+              href="https://sunbeam23333.github.io/Jason.Kim/pages/rvms-bench.html"
+            >
+              <div class="project-image">
+                <img
+                  src="assets/project-figures/rvms-figure1.png"
+                  alt="RVMS-Bench transition from closed-pool retrieval to real-world memory search"
+                  width="2030"
+                  height="970"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="project-copy">
+                <span class="project-number">05</span>
+                <p class="card-kicker">Benchmark · Video memory search</p>
+                <h3>RVMS-Bench</h3>
+                <p>Long-video search from fragmented global, temporal, visual, and audio memories.</p>
+                <span class="card-action">Read benchmark details ↗</span>
+              </div>
+            </a>
+
+            <a
+              class="project-card"
+              href="https://sunbeam23333.github.io/Jason.Kim/pages/raclo.html"
+            >
+              <div class="project-image raclo-image">
+                <img
+                  src="assets/project-figures/raclo-figure3.png"
+                  alt="RACLO Recall-Search-Verify agent framework"
+                  width="2160"
+                  height="700"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="project-copy">
+                <span class="project-number">06</span>
+                <p class="card-kicker">Agent framework · Open web</p>
+                <h3>RACLO</h3>
+                <p>Recall–Search–Verify reasoning for real-world video retrieval and localization.</p>
+                <span class="card-action">Read method details ↗</span>
+              </div>
             </a>
           </div>
         </section>
 
-        <section id="about" class="section about">
+        <section id="about" class="section about-section">
           <div>
             <p class="eyebrow">About</p>
             <h2>Research-minded engineering, grounded in real workloads.</h2>
           </div>
           <div class="about-copy">
             <p>
-              I am an EECS undergraduate at Beijing University of Posts and Telecommunications.
-              My work spans multimodal pre-training, long-video understanding, retrieval,
-              VLA-inspired process reasoning, AI safety, and training/inference infrastructure.
+              My work connects representation learning, temporal reasoning, retrieval, embodied
+              intelligence, model post-training, and systems engineering. I care about the full
+              path from data design and training objectives to evaluation and deployment.
             </p>
-            <p>
-              I care about the full path from data and representation design to evaluation,
-              deployment constraints, and reproducible systems.
-            </p>
-            <div class="about-links">
-              <a href="mailto:Meiqin1shengtui@126.com">Email ↗</a>
-              <a href="https://github.com/Sunbeam23333">GitHub ↗</a>
-              <a href="https://huggingface.co/datasets/tencent/RVMS-Bench">Hugging Face ↗</a>
+            <div class="topic-list" aria-label="Research topics">
+              <span>Multimodal pre-training</span>
+              <span>Video understanding</span>
+              <span>Embedding &amp; retrieval</span>
+              <span>VLA / robotics</span>
+              <span>AI safety</span>
+              <span>Distributed ML systems</span>
             </div>
           </div>
         </section>
 
-        <section class="contact-card">
-          <p class="eyebrow">Let’s connect</p>
-          <h2>Interested in multimodal research and systems that hold up outside the demo.</h2>
-          <a class="button primary light" href="mailto:Meiqin1shengtui@126.com">Start a conversation ↗</a>
+        <section id="contact" class="contact-card">
+          <div>
+            <p class="eyebrow">Let’s connect</p>
+            <h2>Interested in multimodal research that holds up outside the demo.</h2>
+          </div>
+          <div class="contact-links">
+            <a href="mailto:Meiqin1shengtui@126.com">Email ↗</a>
+            <a href="https://github.com/Sunbeam23333" target="_blank" rel="noreferrer">GitHub ↗</a>
+            <a
+              href="https://scholar.google.com/citations?hl=en&amp;user=7NUo_ykAAAAJ"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Google Scholar ↗
+            </a>
+            <a href="https://sunbeam23333.github.io/Jason.Kim/">Full portfolio ↗</a>
+          </div>
         </section>
       </main>
 
       <footer>
         <p>© <span id="year"></span> Haopeng Jin.</p>
-        <p>
-          Detailed work lives at
-          <a href="https://sunbeam23333.github.io/Jason.Kim/">Jason.Kim ↗</a>
-        </p>
+        <p>Multimodal AI · Video · Retrieval · Systems</p>
       </footer>
     </div>
 
