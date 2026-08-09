@@ -119,23 +119,36 @@ img {
     #03040a;
 }
 
-.aurora-fallback::before {
+.aurora-fallback::before,
+.aurora-fallback::after {
   position: absolute;
   top: 45%;
-  left: 61%;
-  width: min(48vw, 700px);
+  left: 63%;
+  width: min(42vw, 620px);
   aspect-ratio: 1;
-  background: linear-gradient(135deg, #32dfff 8%, #73ffe1 41%, #526dff 68%, #a55bff 100%);
   content: "";
-  filter: drop-shadow(0 0 22px rgba(64, 217, 255, 0.52)) drop-shadow(0 0 58px rgba(82, 80, 255, 0.34));
-  mask: url("assets/cassel-tree-mask.png?v=20260809-tree-v2") center / contain no-repeat;
-  opacity: 0.76;
   transform: translate(-50%, -50%);
   transition: opacity 400ms ease;
-  -webkit-mask: url("assets/cassel-tree-mask.png?v=20260809-tree-v2") center / contain no-repeat;
 }
 
-.aurora-bg.aurora-ready .aurora-fallback::before {
+.aurora-fallback::before {
+  background: linear-gradient(135deg, #32dfff 8%, #73ffe1 41%, #526dff 68%, #a55bff 100%);
+  filter: drop-shadow(0 0 15px rgba(64, 217, 255, 0.54)) drop-shadow(0 0 44px rgba(82, 80, 255, 0.3));
+  mask: url("assets/cassel-tree-flow-mask.png?v=20260809-tree-v3") center / contain no-repeat;
+  opacity: 0.72;
+  -webkit-mask: url("assets/cassel-tree-flow-mask.png?v=20260809-tree-v3") center / contain no-repeat;
+}
+
+.aurora-fallback::after {
+  background: linear-gradient(150deg, #fff1ad 5%, #f0bd55 52%, #a96818 100%);
+  filter: drop-shadow(0 0 7px rgba(255, 224, 137, 0.62)) drop-shadow(0 0 18px rgba(224, 153, 50, 0.28));
+  mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
+  opacity: 0.92;
+  -webkit-mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
+}
+
+.aurora-bg.aurora-ready .aurora-fallback::before,
+.aurora-bg.aurora-ready .aurora-fallback::after {
   opacity: 0.06;
 }
 
@@ -776,7 +789,8 @@ footer p {
     justify-self: start;
   }
 
-  .aurora-fallback::before {
+  .aurora-fallback::before,
+  .aurora-fallback::after {
     top: 23%;
     left: 62%;
     width: min(72vw, 540px);
@@ -809,10 +823,11 @@ footer p {
     height: 900px;
   }
 
-  .aurora-fallback::before {
+  .aurora-fallback::before,
+  .aurora-fallback::after {
     top: 23.5%;
-    left: 52%;
-    width: 94vw;
+    left: 50%;
+    width: 88vw;
   }
 
   .site-shell {

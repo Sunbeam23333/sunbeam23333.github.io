@@ -7,6 +7,7 @@ import sys
 import cv2
 import numpy as np
 from PIL import Image, ImageFilter
+from skimage.morphology import skeletonize
 
 
 def smoothstep(edge_low: float, edge_high: float, values: np.ndarray) -> np.ndarray:
@@ -14,9 +15,38 @@ def smoothstep(edge_low: float, edge_high: float, values: np.ndarray) -> np.ndar
     return scaled * scaled * (3.0 - 2.0 * scaled)
 
 
+def save_alpha_mask(alpha: Image.Image, destination: Path) -> None:
+    rgba = Image.new("RGBA", alpha.size, (255, 255, 255, 0))
+    rgba.putalpha(alpha)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    rgba.save(destination, optimize=True)
+
+
+def variable_width_skeleton(
+    skeleton: np.ndarray,
+    distance: np.ndarray,
+    scale: float,
+    maximum_radius: int,
+) -> np.ndarray:
+    target_radius = np.clip(distance * scale, 1.0, float(maximum_radius))
+    rendered = np.zeros(skeleton.shape, dtype=np.uint8)
+
+    for radius in range(1, maximum_radius + 1):
+        centers = (skeleton > 0) & (target_radius >= radius - 0.45)
+        if not np.any(centers):
+            continue
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (radius * 2 + 1, radius * 2 + 1))
+        rendered = np.maximum(rendered, cv2.dilate(centers.astype(np.uint8), kernel))
+
+    return rendered
+
+
 def main() -> None:
-    if len(sys.argv) != 3:
-        raise SystemExit("usage: extract_cassel_tree_mask.py SOURCE_JPEG OUTPUT_PNG")
+    if len(sys.argv) not in (3, 5):
+        raise SystemExit(
+            "usage: extract_cassel_tree_mask.py SOURCE_JPEG OUTPUT_PNG "
+            "[FLOW_MASK_PNG VEIN_MASK_PNG]"
+        )
 
     source = Path(sys.argv[1])
     destination = Path(sys.argv[2])
@@ -75,15 +105,61 @@ def main() -> None:
 
     mask = Image.fromarray(square).resize((1024, 1024), Image.Resampling.LANCZOS)
     mask = mask.filter(ImageFilter.GaussianBlur(0.28))
-    rgba = Image.new("RGBA", mask.size, (255, 255, 255, 0))
-    rgba.putalpha(mask)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    rgba.save(destination, optimize=True)
+    save_alpha_mask(mask, destination)
 
     print(
         f"saved {destination} from bbox=({x0},{y0})-({x1},{y1}); "
         f"components={component_count - 1}; kept_pixels={int(np.count_nonzero(alpha_u8))}"
     )
+
+    if len(sys.argv) == 5:
+        flow_destination = Path(sys.argv[3])
+        vein_destination = Path(sys.argv[4])
+        # Build the line assets at their native 2K delivery size. Skeletonising the
+        # 1K mask and enlarging it afterwards preserves tiny staircase artefacts;
+        # upsampling the antialiased alpha first gives the centreline more samples
+        # to follow and produces noticeably smoother outer twigs and root loops.
+        refined_mask = mask.resize((2048, 2048), Image.Resampling.LANCZOS)
+        refined_alpha = np.array(refined_mask, dtype=np.uint8)
+        refined_alpha = cv2.GaussianBlur(refined_alpha, (0, 0), 1.35)
+        refined_binary = (refined_alpha > 86).astype(np.uint8)
+        skeleton = skeletonize(refined_binary > 0).astype(np.uint8)
+        distance = cv2.distanceTransform(refined_binary, cv2.DIST_L2, 5)
+
+        flow_binary = variable_width_skeleton(skeleton, distance, scale=0.24, maximum_radius=18)
+        flow_alpha = cv2.GaussianBlur(flow_binary * 255, (0, 0), 1.15)
+
+        refined_components, refined_labels, refined_stats, _ = cv2.connectedComponentsWithStats(
+            refined_binary,
+            8,
+        )
+        largest_component = 1 + int(np.argmax(refined_stats[1:, cv2.CC_STAT_AREA]))
+        gold_region = refined_labels == largest_component
+        for component in range(1, refined_components):
+            component_y = refined_stats[component, cv2.CC_STAT_TOP]
+            component_area = refined_stats[component, cv2.CC_STAT_AREA]
+            if component_y > refined_binary.shape[0] * 0.7 and component_area >= 320:
+                gold_region |= refined_labels == component
+
+        vein_skeleton = skeleton * gold_region.astype(np.uint8)
+        vein_binary = variable_width_skeleton(
+            vein_skeleton,
+            distance,
+            scale=0.055,
+            maximum_radius=6,
+        )
+        vein_alpha = cv2.GaussianBlur(vein_binary * 255, (0, 0), 0.68)
+
+        flow_mask = Image.fromarray(flow_alpha)
+        vein_mask = Image.fromarray(vein_alpha)
+        save_alpha_mask(flow_mask, flow_destination)
+        save_alpha_mask(vein_mask, vein_destination)
+
+        print(
+            f"saved {flow_destination} and {vein_destination}; "
+            f"skeleton_pixels={int(np.count_nonzero(skeleton))}; "
+            f"vein_pixels={int(np.count_nonzero(vein_binary))}"
+        )
 
 
 if __name__ == "__main__":
