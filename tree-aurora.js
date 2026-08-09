@@ -79,6 +79,7 @@
     const sourceMaskImage = new Image();
     const veinMaskImage = new Image();
     const radiators = [];
+    const mobileRadiators = [];
     const particles = [];
     const random = seededRandom(23333);
 
@@ -131,85 +132,378 @@
         return;
       }
 
-      const sampleSize = 256;
+      const sampleSize = 320;
+      const pixelCount = sampleSize * sampleSize;
       sampleCanvas.width = sampleSize;
       sampleCanvas.height = sampleSize;
+
       sampleContext.drawImage(sourceMaskImage, 0, 0, sampleSize, sampleSize);
-      const pixels = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
-      const alphaAt = (x, y) => pixels[(y * sampleSize + x) * 4 + 3];
-      const edgeCandidates = [];
+      const sourcePixels = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
+      sampleContext.clearRect(0, 0, sampleSize, sampleSize);
+      sampleContext.drawImage(flowMaskImage, 0, 0, sampleSize, sampleSize);
+      const flowPixels = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
+      const sourceAlphaAt = (x, y) => sourcePixels[(y * sampleSize + x) * 4 + 3];
+      const flowAlphaAt = (x, y) => flowPixels[(y * sampleSize + x) * 4 + 3];
+
+      // A geodesic distance from the lower trunk gives every connected branch a
+      // stable root-to-tip direction. Detached leaves fall back to a radial sign.
+      const flowDistance = new Int32Array(pixelCount);
+      flowDistance.fill(-1);
+      let seedX = Math.round(sampleSize * 0.5);
+      let seedY = Math.round(sampleSize * 0.65);
+      let seedAlpha = -1;
+      for (let y = Math.round(sampleSize * 0.61); y <= Math.round(sampleSize * 0.68); y += 1) {
+        for (let x = Math.round(sampleSize * 0.47); x <= Math.round(sampleSize * 0.53); x += 1) {
+          const alpha = flowAlphaAt(x, y);
+          if (alpha > seedAlpha) {
+            seedAlpha = alpha;
+            seedX = x;
+            seedY = y;
+          }
+        }
+      }
+
+      const queue = new Int32Array(pixelCount);
+      let queueHead = 0;
+      let queueTail = 0;
+      const seedIndex = seedY * sampleSize + seedX;
+      flowDistance[seedIndex] = 0;
+      queue[queueTail] = seedIndex;
+      queueTail += 1;
+      let maximumFlowDistance = 1;
+      const neighborOffsets = [
+        [-1, -1],
+        [0, -1],
+        [1, -1],
+        [-1, 0],
+        [1, 0],
+        [-1, 1],
+        [0, 1],
+        [1, 1],
+      ];
+
+      while (queueHead < queueTail) {
+        const index = queue[queueHead];
+        queueHead += 1;
+        const x = index % sampleSize;
+        const y = Math.floor(index / sampleSize);
+        const nextDistance = flowDistance[index] + 1;
+        neighborOffsets.forEach(([offsetX, offsetY]) => {
+          const nextX = x + offsetX;
+          const nextY = y + offsetY;
+          if (nextX < 0 || nextY < 0 || nextX >= sampleSize || nextY >= sampleSize) {
+            return;
+          }
+          const nextIndex = nextY * sampleSize + nextX;
+          if (flowDistance[nextIndex] >= 0 || flowAlphaAt(nextX, nextY) <= 24) {
+            return;
+          }
+          flowDistance[nextIndex] = nextDistance;
+          maximumFlowDistance = Math.max(maximumFlowDistance, nextDistance);
+          queue[queueTail] = nextIndex;
+          queueTail += 1;
+        });
+      }
+
+      const estimateTangent = (centerX, centerY) => {
+        const radius = 8;
+        const sigmaSquared = 18;
+        let totalWeight = 0;
+        let weightedX = 0;
+        let weightedY = 0;
+        let weightedXX = 0;
+        let weightedXY = 0;
+        let weightedYY = 0;
+
+        for (let offsetY = -radius; offsetY <= radius; offsetY += 1) {
+          const y = centerY + offsetY;
+          if (y < 0 || y >= sampleSize) {
+            continue;
+          }
+          for (let offsetX = -radius; offsetX <= radius; offsetX += 1) {
+            const x = centerX + offsetX;
+            if (x < 0 || x >= sampleSize) {
+              continue;
+            }
+            const alpha = flowAlphaAt(x, y) / 255;
+            if (alpha < 0.04) {
+              continue;
+            }
+            const weight = alpha * Math.exp(-(offsetX * offsetX + offsetY * offsetY) / sigmaSquared);
+            totalWeight += weight;
+            weightedX += offsetX * weight;
+            weightedY += offsetY * weight;
+            weightedXX += offsetX * offsetX * weight;
+            weightedXY += offsetX * offsetY * weight;
+            weightedYY += offsetY * offsetY * weight;
+          }
+        }
+
+        if (totalWeight < 0.8) {
+          return null;
+        }
+        const meanX = weightedX / totalWeight;
+        const meanY = weightedY / totalWeight;
+        const covarianceXX = weightedXX / totalWeight - meanX * meanX;
+        const covarianceXY = weightedXY / totalWeight - meanX * meanY;
+        const covarianceYY = weightedYY / totalWeight - meanY * meanY;
+        const difference = Math.hypot(covarianceXX - covarianceYY, 2 * covarianceXY);
+        const trace = covarianceXX + covarianceYY;
+        const coherence = difference / Math.max(0.001, trace);
+        if (coherence < 0.3) {
+          return null;
+        }
+
+        const angle = 0.5 * Math.atan2(2 * covarianceXY, covarianceXX - covarianceYY);
+        return {
+          x: Math.cos(angle),
+          y: Math.sin(angle),
+          coherence,
+        };
+      };
+
+      const probeDistance = (x, y) => {
+        const centerX = Math.round(x);
+        const centerY = Math.round(y);
+        let best = -1;
+        for (let offsetY = -3; offsetY <= 3; offsetY += 1) {
+          for (let offsetX = -3; offsetX <= 3; offsetX += 1) {
+            const probeX = centerX + offsetX;
+            const probeY = centerY + offsetY;
+            if (probeX < 0 || probeY < 0 || probeX >= sampleSize || probeY >= sampleSize) {
+              continue;
+            }
+            best = Math.max(best, flowDistance[probeY * sampleSize + probeX]);
+          }
+        }
+        return best;
+      };
+
+      const orientTowardBranchTip = (x, y, tangent) => {
+        const probeLength = 7;
+        const forwardDistance = probeDistance(x + tangent.x * probeLength, y + tangent.y * probeLength);
+        const backwardDistance = probeDistance(x - tangent.x * probeLength, y - tangent.y * probeLength);
+        let direction = 1;
+
+        if (forwardDistance < 0 && backwardDistance >= 0) {
+          direction = 1;
+        } else if (backwardDistance < 0 && forwardDistance >= 0) {
+          direction = -1;
+        } else if (forwardDistance >= 0 && backwardDistance >= 0) {
+          direction = forwardDistance >= backwardDistance ? 1 : -1;
+        } else {
+          const radialX = x / sampleSize - 0.5;
+          const radialY = y / sampleSize - 0.55;
+          direction = tangent.x * radialX + tangent.y * radialY >= 0 ? 1 : -1;
+        }
+
+        let directionX = tangent.x * direction;
+        let directionY = tangent.y * direction;
+        let radialX = x / sampleSize - 0.5;
+        let radialY = y / sampleSize - 0.55;
+        const radialLength = Math.max(0.001, Math.hypot(radialX, radialY));
+        radialX /= radialLength;
+        radialY /= radialLength;
+        directionX = directionX * 0.96 + radialX * 0.04;
+        directionY = directionY * 0.96 + radialY * 0.04;
+        const directionLength = Math.max(0.001, Math.hypot(directionX, directionY));
+        return {
+          x: directionX / directionLength,
+          y: directionY / directionLength,
+        };
+      };
+
+      const branchCandidates = [];
       const interiorCandidates = [];
+      const gridSize = mode === "wallpaper" ? 7 : 8;
+      const canopyBottom = Math.round(sampleSize * 0.665);
 
-      for (let y = 4; y < sampleSize - 4; y += 2) {
-        for (let x = 4; x < sampleSize - 4; x += 2) {
-          const alpha = alphaAt(x, y);
-          if (alpha > 112 && y < sampleSize * 0.74) {
-            interiorCandidates.push({ x: x / sampleSize, y: y / sampleSize });
+      for (let cellY = 2; cellY < canopyBottom; cellY += gridSize) {
+        for (let cellX = 2; cellX < sampleSize - 2; cellX += gridSize) {
+          let bestX = -1;
+          let bestY = -1;
+          let bestAlpha = 64;
+          for (let y = cellY; y < Math.min(canopyBottom, cellY + gridSize); y += 1) {
+            for (let x = cellX; x < Math.min(sampleSize - 2, cellX + gridSize); x += 1) {
+              const alpha = flowAlphaAt(x, y);
+              if (alpha > bestAlpha) {
+                bestAlpha = alpha;
+                bestX = x;
+                bestY = y;
+              }
+            }
           }
-          if (alpha < 48 || y > sampleSize * 0.71) {
+          if (bestX < 0) {
             continue;
           }
 
-          const gradientX = alphaAt(x + 2, y) - alphaAt(x - 2, y);
-          const gradientY = alphaAt(x, y + 2) - alphaAt(x, y - 2);
-          const magnitude = Math.hypot(gradientX, gradientY);
-          if (magnitude < 54) {
+          const normalizedX = bestX / sampleSize;
+          const normalizedY = bestY / sampleSize;
+          const isTrunk =
+            normalizedY >= 0.425 &&
+            normalizedY <= 0.665 &&
+            Math.abs(normalizedX - 0.5) <= 0.035;
+          if (isTrunk) {
             continue;
           }
 
-          let normalX = -gradientX / magnitude;
-          let normalY = -gradientY / magnitude;
-          let radialX = x / sampleSize - 0.5;
-          let radialY = y / sampleSize - 0.47;
-          const radialLength = Math.max(0.001, Math.hypot(radialX, radialY));
-          radialX /= radialLength;
-          radialY /= radialLength;
-
-          if (normalX * radialX + normalY * radialY < 0) {
-            normalX *= -1;
-            normalY *= -1;
+          const tangent = estimateTangent(bestX, bestY);
+          if (!tangent) {
+            continue;
           }
-
-          normalX = normalX * 0.72 + radialX * 0.28;
-          normalY = normalY * 0.72 + radialY * 0.28;
-          const normalLength = Math.max(0.001, Math.hypot(normalX, normalY));
-          edgeCandidates.push({
-            x: x / sampleSize,
-            y: y / sampleSize,
-            nx: normalX / normalLength,
-            ny: normalY / normalLength,
-            strength: Math.min(1, magnitude / 255),
+          const direction = orientTowardBranchTip(bestX, bestY, tangent);
+          const distance = flowDistance[bestY * sampleSize + bestX];
+          const radialDistance = Math.hypot(normalizedX - 0.5, normalizedY - 0.55);
+          const outwardness =
+            distance >= 0 ? distance / maximumFlowDistance : Math.min(1, radialDistance / 0.52);
+          branchCandidates.push({
+            x: normalizedX,
+            y: normalizedY,
+            nx: direction.x,
+            ny: direction.y,
+            strength: 0.62 + tangent.coherence * 0.38,
+            order: random() * 0.62 + outwardness * 0.38,
           });
         }
       }
 
-      for (let index = edgeCandidates.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(random() * (index + 1));
-        const temporary = edgeCandidates[index];
-        edgeCandidates[index] = edgeCandidates[swapIndex];
-        edgeCandidates[swapIndex] = temporary;
+      for (let y = 5; y < canopyBottom; y += 3) {
+        for (let x = 5; x < sampleSize - 5; x += 3) {
+          if (sourceAlphaAt(x, y) > 112) {
+            interiorCandidates.push({ x: x / sampleSize, y: y / sampleSize });
+          }
+        }
       }
 
-      radiators.length = 0;
-      const radiatorCount = mode === "wallpaper" ? 168 : 112;
-      edgeCandidates.slice(0, radiatorCount).forEach((candidate, index) => {
-        const angle = (random() - 0.5) * 0.34;
+      branchCandidates.sort((first, second) => second.order - first.order);
+      const canopyParentCount = mode === "wallpaper" ? 190 : 140;
+      const canopyParents = [];
+      const colorSequence = [0, 1, 1, 2, 2, 3, 4];
+      branchCandidates.slice(0, canopyParentCount).forEach((candidate, index) => {
+        const angle = (random() - 0.5) * 0.07;
         const cosine = Math.cos(angle);
         const sine = Math.sin(angle);
-        radiators.push({
+        canopyParents.push({
           x: candidate.x,
           y: candidate.y,
           nx: candidate.nx * cosine - candidate.ny * sine,
           ny: candidate.nx * sine + candidate.ny * cosine,
-          length: 0.065 + random() * 0.135,
-          bend: (random() - 0.5) * 0.07,
+          length: random() < 0.74 ? 0.034 + random() * 0.052 : 0.086 + random() * 0.055,
+          bend: (random() - 0.5) * 0.02,
           phase: random() * TAU,
-          speed: 0.72 + random() * 0.72,
-          width: 0.48 + random() * 0.92,
-          color: (index + Math.floor(random() * AURORA_COLORS.length)) % AURORA_COLORS.length,
+          speed: 0.72 + random() * 0.68,
+          width: 0.34 + random() * 0.5,
+          color: colorSequence[Math.floor(random() * colorSequence.length)],
           strength: candidate.strength,
+          alpha: 0.68 + random() * 0.28,
+          strandCount: 3,
+          strandGap: 0.0019 + random() * 0.0014,
+          strandSpread: 0.035 + random() * 0.02,
+          strandLengths: [0.86 + random() * 0.1, 0.98 + random() * 0.08, 0.9 + random() * 0.16],
+          inset: 0.007,
+          sway: 0.0038 + random() * 0.0018,
+          glow: index % 12 === 0,
+          head: index % 9 === 0,
+          kind: "canopy",
         });
       });
+
+      const trunkParents = [];
+      const trunkRowCount = mode === "wallpaper" ? 12 : 11;
+      for (let row = 0; row < trunkRowCount; row += 1) {
+        const targetY = Math.round(sampleSize * (0.49 + (row / Math.max(1, trunkRowCount - 1)) * 0.2));
+        let trunkX = Math.round(sampleSize * 0.5);
+        let trunkY = targetY;
+        let trunkAlpha = -1;
+        let trunkOffset = Number.POSITIVE_INFINITY;
+        for (let y = targetY - 2; y <= targetY + 2; y += 1) {
+          for (let x = Math.round(sampleSize * 0.465); x <= Math.round(sampleSize * 0.535); x += 1) {
+            const alpha = flowAlphaAt(x, y);
+            const offset = Math.abs(x - sampleSize * 0.5) + Math.abs(y - targetY);
+            if (alpha > trunkAlpha || (alpha === trunkAlpha && offset < trunkOffset)) {
+              trunkAlpha = alpha;
+              trunkX = x;
+              trunkY = y;
+              trunkOffset = offset;
+            }
+          }
+        }
+        if (trunkAlpha < 48) {
+          continue;
+        }
+
+        // The central Cassel trunk is intentionally close to vertical. Keeping
+        // this normal horizontal makes its energy feathers read as perpendicular
+        // even near the two large branch junctions where PCA becomes ambiguous.
+        const normalX = 1;
+        const normalY = 0;
+        [-1, 1].forEach((side, sideIndex) => {
+          let edgeStep = 10;
+          let transparentRun = 0;
+          for (let step = 0; step <= 10; step += 1) {
+            const edgeX = Math.round(trunkX + normalX * side * step);
+            const edgeY = Math.round(trunkY + normalY * side * step);
+            if (
+              edgeX < 0 ||
+              edgeY < 0 ||
+              edgeX >= sampleSize ||
+              edgeY >= sampleSize
+            ) {
+              edgeStep = step;
+              break;
+            }
+            transparentRun = flowAlphaAt(edgeX, edgeY) < 24 ? transparentRun + 1 : 0;
+            if (transparentRun >= 2) {
+              edgeStep = Math.max(1, step - 1);
+              break;
+            }
+          }
+          const directionX = normalX * side;
+          const directionY = normalY * side;
+          trunkParents.push({
+            x: (trunkX + directionX * edgeStep) / sampleSize,
+            y: (trunkY + directionY * edgeStep) / sampleSize,
+            nx: directionX,
+            ny: directionY,
+            length: 0.026 + random() * 0.043,
+            bend: (random() - 0.5) * 0.009,
+            phase: row * 0.52 + sideIndex * 0.24,
+            speed: 0.84 + random() * 0.44,
+            width: 0.3 + random() * 0.38,
+            color: Math.floor(random() * 3),
+            strength: 0.94,
+            alpha: 0.78 + random() * 0.2,
+            strandCount: 3,
+            strandGap: 0.0021,
+            strandSpread: 0.022,
+            strandLengths: [0.86, 1.02, 0.92],
+            inset: 0.002,
+            sway: 0.0026,
+            glow: row % 4 === 0 && sideIndex === 0,
+            head: row % 4 === 1 && sideIndex === 0,
+            kind: "trunk",
+          });
+        });
+      }
+
+      const prepareStrandDirections = (radiator) => {
+        const strandCenter = (radiator.strandCount - 1) / 2;
+        radiator.strandCosines = [];
+        radiator.strandSines = [];
+        for (let strand = 0; strand < radiator.strandCount; strand += 1) {
+          const angle = (strand - strandCenter) * radiator.strandSpread;
+          radiator.strandCosines.push(Math.cos(angle));
+          radiator.strandSines.push(Math.sin(angle));
+        }
+      };
+      canopyParents.forEach(prepareStrandDirections);
+      trunkParents.forEach(prepareStrandDirections);
+
+      radiators.length = 0;
+      radiators.push(...canopyParents, ...trunkParents);
+      mobileRadiators.length = 0;
+      const mobileCanopyCount = mode === "wallpaper" ? 64 : 54;
+      mobileRadiators.push(...trunkParents, ...canopyParents.slice(0, mobileCanopyCount));
 
       particles.length = 0;
       const particleCount = mode === "wallpaper" ? 58 : 42;
@@ -275,59 +569,96 @@
       radianceContext.lineJoin = "round";
 
       const mobile = width <= 720;
-      const activeCount = mobile ? Math.min(64, radiators.length) : radiators.length;
+      const activeRadiators = mobile ? mobileRadiators : radiators;
 
-      for (let index = 0; index < activeCount; index += 1) {
-        const radiator = radiators[index];
+      for (let index = 0; index < activeRadiators.length; index += 1) {
+        const radiator = activeRadiators[index];
         const color = AURORA_COLORS[radiator.color];
         const pulse = 0.5 + 0.5 * Math.sin(seconds * radiator.speed + radiator.phase);
-        const length = tree.size * radiator.length * (0.7 + pulse * 0.42);
-        const tangentX = -radiator.ny;
-        const tangentY = radiator.nx;
-        const sway = Math.sin(seconds * (TAU / 6) + radiator.phase) * tree.size * 0.016;
-        const bend = tree.size * radiator.bend + sway;
-        const start = {
-          x: tree.x + tree.size * radiator.x - radiator.nx * tree.size * 0.005,
-          y: tree.y + tree.size * radiator.y - radiator.ny * tree.size * 0.005,
-        };
-        const controlOne = {
-          x: start.x + radiator.nx * length * 0.33 + tangentX * bend,
-          y: start.y + radiator.ny * length * 0.33 + tangentY * bend,
-        };
-        const controlTwo = {
-          x: start.x + radiator.nx * length * 0.72 - tangentX * bend * 0.58,
-          y: start.y + radiator.ny * length * 0.72 - tangentY * bend * 0.58,
-        };
-        const end = {
-          x: start.x + radiator.nx * length + tangentX * sway * 0.62,
-          y: start.y + radiator.ny * length + tangentY * sway * 0.62,
-        };
-
         radianceContext.beginPath();
-        radianceContext.moveTo(start.x, start.y);
-        radianceContext.bezierCurveTo(
-          controlOne.x,
-          controlOne.y,
-          controlTwo.x,
-          controlTwo.y,
-          end.x,
-          end.y,
-        );
+        const middleStrand = Math.floor(radiator.strandCount / 2);
+        const strandCenter = (radiator.strandCount - 1) / 2;
+        let centerPath = null;
+
+        for (let strand = 0; strand < radiator.strandCount; strand += 1) {
+          const strandOffset = strand - strandCenter;
+          const cosine = radiator.strandCosines[strand];
+          const sine = radiator.strandSines[strand];
+          const directionX = radiator.nx * cosine - radiator.ny * sine;
+          const directionY = radiator.nx * sine + radiator.ny * cosine;
+          const tangentX = -directionY;
+          const tangentY = directionX;
+          const strandPulse =
+            0.5 + 0.5 * Math.sin(seconds * radiator.speed + radiator.phase + strandOffset * 0.22);
+          const length =
+            tree.size *
+            radiator.length *
+            radiator.strandLengths[strand] *
+            (0.74 + strandPulse * 0.36);
+          const sway =
+            Math.sin(seconds * (TAU / 6) + radiator.phase + strandOffset * 0.34) *
+            tree.size *
+            radiator.sway;
+          const bend = tree.size * (radiator.bend + strandOffset * 0.0016) + sway;
+          const lateralOffset = strandOffset * tree.size * radiator.strandGap;
+          const startX =
+            tree.x +
+            tree.size * radiator.x +
+            tangentX * lateralOffset -
+            directionX * tree.size * radiator.inset;
+          const startY =
+            tree.y +
+            tree.size * radiator.y +
+            tangentY * lateralOffset -
+            directionY * tree.size * radiator.inset;
+          const controlOneX = startX + directionX * length * 0.35 + tangentX * bend;
+          const controlOneY = startY + directionY * length * 0.35 + tangentY * bend;
+          const controlTwoX = startX + directionX * length * 0.73 - tangentX * bend * 0.42;
+          const controlTwoY = startY + directionY * length * 0.73 - tangentY * bend * 0.42;
+          const endX = startX + directionX * length + tangentX * sway * 0.44;
+          const endY = startY + directionY * length + tangentY * sway * 0.44;
+
+          radianceContext.moveTo(startX, startY);
+          radianceContext.bezierCurveTo(
+            controlOneX,
+            controlOneY,
+            controlTwoX,
+            controlTwoY,
+            endX,
+            endY,
+          );
+
+          if (radiator.head && strand === middleStrand) {
+            centerPath = {
+              start: { x: startX, y: startY },
+              controlOne: { x: controlOneX, y: controlOneY },
+              controlTwo: { x: controlTwoX, y: controlTwoY },
+              end: { x: endX, y: endY },
+            };
+          }
+        }
+
         radianceContext.strokeStyle = `rgb(${color[0]} ${color[1]} ${color[2]})`;
         radianceContext.lineWidth = radiator.width * (mobile ? 0.82 : 1);
         radianceContext.globalAlpha =
-          (0.26 + pulse * 0.34) * (0.72 + radiator.strength * 0.28);
+          (0.18 + pulse * 0.28) * (0.72 + radiator.strength * 0.28) * radiator.alpha;
         radianceContext.stroke();
 
-        if (index % 9 === 0) {
-          radianceContext.lineWidth = radiator.width * 5.5;
-          radianceContext.globalAlpha = 0.05 + pulse * 0.07;
+        if (!mobile && radiator.glow) {
+          radianceContext.lineWidth = radiator.width * 4.8;
+          radianceContext.globalAlpha = (0.028 + pulse * 0.046) * radiator.alpha;
           radianceContext.stroke();
         }
 
-        if (index % 4 === 0) {
+        if (radiator.head && centerPath) {
           const travel = (seconds * (0.055 + radiator.speed * 0.018) + radiator.phase / TAU) % 1;
-          const head = cubicPoint(start, controlOne, controlTwo, end, travel);
+          const head = cubicPoint(
+            centerPath.start,
+            centerPath.controlOne,
+            centerPath.controlTwo,
+            centerPath.end,
+            travel,
+          );
           radianceContext.beginPath();
           radianceContext.arc(head.x, head.y, 0.45 + radiator.width * 0.45, 0, TAU);
           radianceContext.fillStyle = `rgb(${Math.min(255, color[0] + 72)} ${Math.min(
@@ -339,7 +670,11 @@
         }
       }
 
-      particles.forEach((particle) => {
+      const activeParticleCount = mobile
+        ? Math.min(mode === "wallpaper" ? 30 : 24, particles.length)
+        : particles.length;
+      for (let index = 0; index < activeParticleCount; index += 1) {
+        const particle = particles[index];
         const color = AURORA_COLORS[particle.color];
         const pulse = 0.5 + 0.5 * Math.sin(seconds * particle.speed * 1.8 + particle.phase);
         const x = tree.x + tree.size * (particle.x + Math.sin(seconds * 0.7 + particle.phase) * 0.003);
@@ -349,7 +684,7 @@
         radianceContext.fillStyle = `rgb(${color[0]} ${color[1]} ${color[2]})`;
         radianceContext.globalAlpha = 0.16 + pulse * 0.38;
         radianceContext.fill();
-      });
+      }
 
       radianceContext.restore();
     };
