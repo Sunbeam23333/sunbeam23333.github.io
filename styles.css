@@ -132,24 +132,19 @@ img {
 }
 
 .aurora-fallback::before {
-  background: linear-gradient(135deg, #32dfff 8%, #73ffe1 41%, #526dff 68%, #a55bff 100%);
-  filter: drop-shadow(0 0 15px rgba(64, 217, 255, 0.54)) drop-shadow(0 0 44px rgba(82, 80, 255, 0.3));
-  mask: url("assets/cassel-tree-flow-mask.png?v=20260809-tree-v3") center / contain no-repeat;
-  opacity: 0.72;
-  -webkit-mask: url("assets/cassel-tree-flow-mask.png?v=20260809-tree-v3") center / contain no-repeat;
+  display: none;
 }
 
 .aurora-fallback::after {
-  background: linear-gradient(150deg, #fff1ad 5%, #f0bd55 52%, #a96818 100%);
-  filter: drop-shadow(0 0 7px rgba(255, 224, 137, 0.62)) drop-shadow(0 0 18px rgba(224, 153, 50, 0.28));
+  background: linear-gradient(150deg, #aeb9cb 2%, #eef5ff 28%, #fffefa 50%, #ffe9bf 72%, #f8fbff 100%);
+  filter: drop-shadow(0 0 4px rgba(242, 248, 255, 0.48)) drop-shadow(0 0 11px rgba(255, 235, 204, 0.18));
   mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
-  opacity: 0.92;
+  opacity: 0.94;
   -webkit-mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
 }
 
-.aurora-bg.aurora-ready .aurora-fallback::before,
 .aurora-bg.aurora-ready .aurora-fallback::after {
-  opacity: 0.06;
+  opacity: 0.035;
 }
 
 .aurora-canvas {
@@ -160,7 +155,7 @@ img {
   width: 100%;
   height: 100%;
   opacity: 0.98;
-  filter: saturate(1.24) contrast(1.05);
+  filter: saturate(1.1) contrast(1.08);
 }
 
 .nav {
