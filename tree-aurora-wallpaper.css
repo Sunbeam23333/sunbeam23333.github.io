@@ -1,0 +1,69 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #02030a;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.wallpaper {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 54%, rgba(29, 57, 132, 0.2), transparent 34%),
+    radial-gradient(circle at 78% 20%, rgba(78, 45, 168, 0.13), transparent 28%),
+    linear-gradient(145deg, #010208 0%, #040716 58%, #02030a 100%);
+  isolation: isolate;
+}
+
+.wallpaper::before,
+.wallpaper::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  content: "";
+}
+
+.wallpaper::before {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black, transparent 76%);
+}
+
+.wallpaper::after {
+  background: radial-gradient(circle at center, transparent 48%, rgba(0, 0, 0, 0.7) 112%);
+}
+
+.wallpaper-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: saturate(1.22) contrast(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wallpaper-canvas {
+    filter: saturate(1.08);
+  }
+}

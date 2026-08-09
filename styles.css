@@ -93,7 +93,7 @@ img {
   inset: 0;
   z-index: 2;
   background:
-    linear-gradient(90deg, rgba(3, 4, 10, 0.98) 0%, rgba(3, 4, 10, 0.88) 31%, rgba(3, 4, 10, 0.46) 51%, rgba(3, 4, 10, 0.04) 78%),
+    linear-gradient(90deg, rgba(3, 4, 10, 0.99) 0%, rgba(3, 4, 10, 0.94) 38%, rgba(3, 4, 10, 0.76) 50%, rgba(3, 4, 10, 0.34) 58%, transparent 64%),
     radial-gradient(circle at 16% 34%, rgba(18, 26, 48, 0.72), transparent 37rem);
   content: "";
 }
@@ -113,10 +113,30 @@ img {
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(ellipse at 82% 45%, rgba(47, 96, 255, 0.34), transparent 28%),
-    radial-gradient(ellipse at 71% 33%, rgba(35, 218, 255, 0.2), transparent 22%),
-    radial-gradient(ellipse at 91% 22%, rgba(129, 73, 255, 0.24), transparent 25%),
+    radial-gradient(ellipse at 61% 45%, rgba(47, 96, 255, 0.26), transparent 32%),
+    radial-gradient(ellipse at 57% 31%, rgba(35, 218, 255, 0.14), transparent 24%),
+    radial-gradient(ellipse at 74% 22%, rgba(129, 73, 255, 0.18), transparent 28%),
     #03040a;
+}
+
+.aurora-fallback::before {
+  position: absolute;
+  top: 45%;
+  left: 61%;
+  width: min(48vw, 700px);
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #32dfff 8%, #73ffe1 41%, #526dff 68%, #a55bff 100%);
+  content: "";
+  filter: drop-shadow(0 0 22px rgba(64, 217, 255, 0.52)) drop-shadow(0 0 58px rgba(82, 80, 255, 0.34));
+  mask: url("assets/cassel-tree-mask.png?v=20260809-tree-v2") center / contain no-repeat;
+  opacity: 0.76;
+  transform: translate(-50%, -50%);
+  transition: opacity 400ms ease;
+  -webkit-mask: url("assets/cassel-tree-mask.png?v=20260809-tree-v2") center / contain no-repeat;
+}
+
+.aurora-bg.aurora-ready .aurora-fallback::before {
+  opacity: 0.06;
 }
 
 .aurora-canvas {
@@ -127,7 +147,7 @@ img {
   width: 100%;
   height: 100%;
   opacity: 0.98;
-  filter: saturate(1.18) contrast(1.04);
+  filter: saturate(1.24) contrast(1.05);
 }
 
 .nav {
@@ -241,6 +261,10 @@ section[id] {
 
 .hero > * {
   min-width: 0;
+}
+
+.hero-copy {
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.32);
 }
 
 .eyebrow,
@@ -387,7 +411,7 @@ h3 {
 }
 
 .profile-card {
-  width: min(100%, 430px);
+  width: min(100%, 400px);
   justify-self: end;
   padding: 18px;
   border: 1px solid rgba(163, 211, 255, 0.22);
@@ -733,6 +757,11 @@ footer p {
     height: 1510px;
   }
 
+  .aurora-canvas {
+    bottom: auto;
+    height: 1000px;
+  }
+
   .hero {
     grid-template-columns: 1fr;
     min-height: auto;
@@ -743,8 +772,14 @@ footer p {
   }
 
   .profile-card {
-    width: min(100%, 430px);
+    width: min(100%, 400px);
     justify-self: start;
+  }
+
+  .aurora-fallback::before {
+    top: 23%;
+    left: 62%;
+    width: min(72vw, 540px);
   }
 
   .metrics {
@@ -768,6 +803,16 @@ footer p {
 @media (max-width: 720px) {
   .aurora-bg {
     height: 1490px;
+  }
+
+  .aurora-canvas {
+    height: 900px;
+  }
+
+  .aurora-fallback::before {
+    top: 23.5%;
+    left: 52%;
+    width: 94vw;
   }
 
   .site-shell {

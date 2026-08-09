@@ -28,14 +28,20 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Newsreader:opsz,wght@6..72,500;6..72,700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260809-aurora" />
+    <link rel="stylesheet" href="styles.css?v=20260809-tree-v2" />
   </head>
   <body>
     <a class="skip-link" href="#top">Skip to content</a>
 
     <div class="aurora-bg" aria-hidden="true">
       <div class="aurora-fallback"></div>
-      <canvas id="aurora-canvas" class="aurora-canvas"></canvas>
+      <canvas
+        id="aurora-canvas"
+        class="aurora-canvas"
+        data-tree-aurora
+        data-tree-mode="hero"
+        data-tree-mask="assets/cassel-tree-mask.png?v=20260809-tree-v2"
+      ></canvas>
     </div>
 
     <div class="site-shell">
@@ -332,6 +338,7 @@
       </footer>
     </div>
 
-    <script src="script.js?v=20260809-aurora"></script>
+    <script src="tree-aurora.js?v=20260809-tree-v2"></script>
+    <script src="script.js?v=20260809-tree-v2"></script>
   </body>
 </html>
