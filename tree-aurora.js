@@ -296,6 +296,58 @@
         };
       };
 
+      const snapToVein = (centerX, centerY, radius = 3) => {
+        let bestX = Math.round(centerX);
+        let bestY = Math.round(centerY);
+        let bestScore = veinAlphaAt(bestX, bestY);
+        for (let offsetY = -radius; offsetY <= radius; offsetY += 1) {
+          for (let offsetX = -radius; offsetX <= radius; offsetX += 1) {
+            const x = Math.round(centerX + offsetX);
+            const y = Math.round(centerY + offsetY);
+            if (x < 0 || y < 0 || x >= sampleSize || y >= sampleSize) {
+              continue;
+            }
+            const score =
+              veinAlphaAt(x, y) - Math.hypot(offsetX, offsetY) * 3.5;
+            if (score > bestScore) {
+              bestScore = score;
+              bestX = x;
+              bestY = y;
+            }
+          }
+        }
+        return { x: bestX, y: bestY };
+      };
+
+      const findVeinCrossSection = (centerX, centerY, normalX, normalY) => {
+        const measureSide = (side) => {
+          let lastInside = 0;
+          let outsideRun = 0;
+          for (let step = 0; step <= 12; step += 0.5) {
+            const x = Math.round(centerX + normalX * side * step);
+            const y = Math.round(centerY + normalY * side * step);
+            if (x < 0 || y < 0 || x >= sampleSize || y >= sampleSize) {
+              break;
+            }
+            if (veinAlphaAt(x, y) > 20) {
+              lastInside = step;
+              outsideRun = 0;
+            } else {
+              outsideRun += 1;
+              if (outsideRun >= 2) {
+                break;
+              }
+            }
+          }
+          return lastInside;
+        };
+
+        return {
+          negative: measureSide(-1),
+          positive: measureSide(1),
+        };
+      };
+
       const branchCandidates = [];
       const gridSize = mode === "wallpaper" ? 4 : 5;
       const branchBottom = Math.round(sampleSize * 0.965);
@@ -344,6 +396,8 @@
           branchCandidates.push({
             x: normalizedX,
             y: normalizedY,
+            sampleX: bestX,
+            sampleY: bestY,
             nx: direction.x,
             ny: direction.y,
             strength: 0.62 + tangent.coherence * 0.38,
@@ -853,12 +907,96 @@
         }
       });
 
+      // Continue the trunk's transverse wave field through the structural
+      // branches. These bundles stay shorter and narrower as they travel away
+      // from the centre, so they connect the trunk to the canopy without
+      // competing with the leaf silhouettes.
+      const limbAnchors = [];
+      const limbTarget = mode === "wallpaper" ? 168 : 132;
+      const limbSpacing = (mode === "wallpaper" ? 5.2 : 6.2) / sampleSize;
+      branchCandidates
+        .filter(
+          (candidate) =>
+            candidate.y > 0.08 &&
+            candidate.y < 0.565 &&
+            candidate.outwardness < 0.82 &&
+            candidate.coherence > 0.34,
+        )
+        .sort(
+          (first, second) =>
+            first.outwardness * 0.72 + first.seedNoise * 0.28 -
+            (second.outwardness * 0.72 + second.seedNoise * 0.28),
+        )
+        .forEach((candidate) => {
+          if (limbAnchors.length >= limbTarget) {
+            return;
+          }
+          if (
+            limbAnchors.every(
+              (anchor) =>
+                Math.hypot(candidate.x - anchor.x, candidate.y - anchor.y) >= limbSpacing,
+            )
+          ) {
+            limbAnchors.push(candidate);
+          }
+        });
+
+      const limbParents = [];
+      limbAnchors.forEach((candidate, anchorIndex) => {
+        const normalX = -candidate.ny;
+        const normalY = candidate.nx;
+        const veinCenter = snapToVein(candidate.sampleX, candidate.sampleY, 3);
+        const crossSection = findVeinCrossSection(
+          veinCenter.x,
+          veinCenter.y,
+          normalX,
+          normalY,
+        );
+        const taper = Math.max(0.16, 1 - candidate.outwardness / 0.9);
+        const insideDistance = 0.62 + taper * 0.28;
+
+        [-1, 1].forEach((side, sideIndex) => {
+          const edgeDistance = side < 0 ? crossSection.negative : crossSection.positive;
+          const attachedEdgeDistance = Math.max(0, edgeDistance - insideDistance);
+          const edgeOffset = side * attachedEdgeDistance;
+          const strandCount = taper > 0.52 ? 5 : 4;
+          const centerStrand = (strandCount - 1) / 2;
+          limbParents.push({
+            x: (veinCenter.x + normalX * edgeOffset) / sampleSize,
+            y: (veinCenter.y + normalY * edgeOffset) / sampleSize,
+            nx: normalX * side,
+            ny: normalY * side,
+            qx: candidate.nx,
+            qy: candidate.ny,
+            length: 0.0085 + taper * 0.008 + random() * 0.004,
+            phase: candidate.outwardness * TAU * 1.7 + sideIndex * 0.15,
+            speed: TAU / 4.15,
+            width: 0.27 + taper * 0.13 + random() * 0.05,
+            color: anchorIndex % 5 === 0 ? 0 : 1,
+            strength: 0.92,
+            alpha: 0.7 + taper * 0.24,
+            strandCount,
+            strandGap: 0.00031 + random() * 0.00013,
+            strandLengths: Array.from({ length: strandCount }, (_, strandIndex) => {
+              const distanceFromCenter = Math.abs(strandIndex - centerStrand) / Math.max(1, centerStrand);
+              return 0.84 + (1 - distanceFromCenter) * 0.14 + random() * 0.025;
+            }),
+            inset: (0.16 + random() * 0.1) / sampleSize,
+            density: 0.84,
+            row: Math.round(candidate.outwardness * 120),
+            sideIndex,
+            taper,
+            kind: "limb",
+          });
+        });
+      });
+
       const trunkParents = [];
-      const trunkRowCount = mode === "wallpaper" ? 56 : 46;
+      const trunkRowCount = mode === "wallpaper" ? 68 : 58;
       for (let row = 0; row < trunkRowCount; row += 1) {
         const targetY = Math.round(
-          sampleSize * (0.49 + (row / Math.max(1, trunkRowCount - 1)) * 0.2) +
-            (random() - 0.5) * 1.4,
+          sampleSize * (0.435 + (row / Math.max(1, trunkRowCount - 1)) * 0.265) +
+            (random() - 0.5) * 0.9,
         );
         let trunkX = Math.round(sampleSize * 0.5);
         let trunkY = targetY;
@@ -866,7 +1004,7 @@
         let trunkOffset = Number.POSITIVE_INFINITY;
         for (let y = targetY - 2; y <= targetY + 2; y += 1) {
           for (let x = Math.round(sampleSize * 0.465); x <= Math.round(sampleSize * 0.535); x += 1) {
-            const alpha = flowAlphaAt(x, y);
+            const alpha = veinAlphaAt(x, y);
             const offset = Math.abs(x - sampleSize * 0.5) + Math.abs(y - targetY);
             if (alpha > trunkAlpha || (alpha === trunkAlpha && offset < trunkOffset)) {
               trunkAlpha = alpha;
@@ -876,7 +1014,7 @@
             }
           }
         }
-        if (trunkAlpha < 48) {
+        if (trunkAlpha < 20) {
           continue;
         }
 
@@ -885,27 +1023,10 @@
         // even near the two large branch junctions where PCA becomes ambiguous.
         const normalX = 1;
         const normalY = 0;
+        const crossSection = findVeinCrossSection(trunkX, trunkY, normalX, normalY);
         [-1, 1].forEach((side, sideIndex) => {
-          let edgeStep = 10;
-          let transparentRun = 0;
-          for (let step = 0; step <= 10; step += 1) {
-            const edgeX = Math.round(trunkX + normalX * side * step);
-            const edgeY = Math.round(trunkY + normalY * side * step);
-            if (
-              edgeX < 0 ||
-              edgeY < 0 ||
-              edgeX >= sampleSize ||
-              edgeY >= sampleSize
-            ) {
-              edgeStep = step;
-              break;
-            }
-            transparentRun = flowAlphaAt(edgeX, edgeY) < 24 ? transparentRun + 1 : 0;
-            if (transparentRun >= 2) {
-              edgeStep = Math.max(1, step - 1);
-              break;
-            }
-          }
+          const edgeDistance = side < 0 ? crossSection.negative : crossSection.positive;
+          const edgeStep = Math.max(0, edgeDistance - (0.62 + random() * 0.2));
           const directionX = normalX * side;
           const directionY = normalY * side;
           trunkParents.push({
@@ -913,22 +1034,24 @@
             y: (trunkY + directionY * edgeStep) / sampleSize,
             nx: directionX,
             ny: directionY,
-            length: 0.014 + random() * 0.018,
+            qx: 0,
+            qy: 1,
+            length: 0.012 + random() * 0.016,
             bend: 0,
             phase: row * 0.42 + sideIndex * 0.16,
             speed: TAU / 3.8,
-            width: 0.42 + random() * 0.17,
+            width: 0.37 + random() * 0.15,
             color: Math.floor(random() * 2),
             strength: 1,
             alpha: 0.94 + random() * 0.06,
             strandCount: 7,
-            strandGap: 0.00042 + random() * 0.00018,
+            strandGap: 0.00034 + random() * 0.00014,
             strandSpread: 0,
             strandLengths: Array.from({ length: 7 }, (_, strandIndex) => {
               const distanceFromCenter = Math.abs(strandIndex - 3) / 3;
               return 0.84 + (1 - distanceFromCenter) * 0.16 + random() * 0.035;
             }),
-            inset: 0.00048,
+            inset: (0.16 + random() * 0.1) / sampleSize,
             sway: 0,
             density: 0.9,
             mint: row % 11 === 4 && sideIndex === 0,
@@ -964,6 +1087,7 @@
       radiators.push(
         ...backgroundFillParents,
         ...backgroundCanopyParents,
+        ...limbParents,
         ...leafParents,
         ...trunkParents,
       );
@@ -973,9 +1097,15 @@
         ...backgroundCanopyParents.filter((_, index) => index % 2 === 0),
       ];
       const mobileLeafParents = leafParents.filter((_, index) => index % 2 === 0);
-      const mobileTrunkParents = trunkParents.filter((_, index) => index % 2 === 0);
+      const mobileLimbParents = limbParents.filter(
+        (_, index) => Math.floor(index / 2) % 3 !== 2,
+      );
+      const mobileTrunkParents = trunkParents.filter(
+        (_, index) => Math.floor(index / 2) % 2 === 0,
+      );
       mobileRadiators.push(
         ...mobileBackgroundParents,
+        ...mobileLimbParents,
         ...mobileLeafParents,
         ...mobileTrunkParents,
       );
@@ -1157,14 +1287,16 @@
           continue;
         }
 
-        if (radiator.kind === "trunk") {
+        if (radiator.kind === "trunk" || radiator.kind === "limb") {
+          const isLimb = radiator.kind === "limb";
           const strandCenter = (radiator.strandCount - 1) / 2;
           const originX =
             tree.x + tree.size * radiator.x - radiator.nx * tree.size * radiator.inset;
           const originY =
             tree.y + tree.size * radiator.y - radiator.ny * tree.size * radiator.inset;
           const pulse = 0.5 + 0.5 * Math.sin(seconds * (TAU / 6) + radiator.phase * 0.12);
-          const centerLength = Math.min(tree.size * radiator.length, mobile ? 18 : 23);
+          const maximumWavePixels = isLimb ? (mobile ? 11 : 15) : mobile ? 17 : 22;
+          const centerLength = Math.min(tree.size * radiator.length, maximumWavePixels);
           const gradientEndX = originX + radiator.nx * centerLength;
           const gradientEndY = originY + radiator.ny * centerLength;
           const trunkGradient = radianceContext.createLinearGradient(
@@ -1187,20 +1319,28 @@
             const length =
               Math.min(
                 tree.size * radiator.length * radiator.strandLengths[strand],
-                mobile ? 18 : 23,
+                maximumWavePixels,
               ) *
-              (0.96 + pulse * 0.08);
+              (0.97 + pulse * 0.06);
             const startX = originX;
-            const startY = originY + strandOffset * tree.size * radiator.strandGap;
+            const startY = originY;
+            const strandDrift = strandOffset * tree.size * radiator.strandGap;
             const amplitude = Math.min(
-              mobile ? 1.45 : 2,
+              isLimb ? (mobile ? 0.72 : 1.05) : mobile ? 1.15 : 1.55,
               length *
-                (0.068 +
-                  0.022 * Math.sin(radiator.row * 0.37 + radiator.sideIndex * 0.8)),
+                (isLimb ? 0.048 : 0.056) +
+                length *
+                  0.016 * Math.sin(radiator.row * 0.37 + radiator.sideIndex * 0.8),
             );
             const wavePoint = (unit) => {
               const envelope = Math.pow(Math.sin(Math.PI * unit), 2);
               const envelopeDerivative = Math.PI * Math.sin(TAU * unit);
+              const spreadUnit = Math.min(1, unit / 0.18);
+              const rootEnvelope = spreadUnit * spreadUnit * (3 - 2 * spreadUnit);
+              const rootEnvelopeDerivative =
+                unit < 0.18
+                  ? (6 * spreadUnit - 6 * spreadUnit * spreadUnit) / 0.18
+                  : 0;
               const theta =
                 TAU * (0.72 * unit - seconds / 3.8) +
                 radiator.phase +
@@ -1210,11 +1350,14 @@
                 amplitude *
                 (envelopeDerivative * Math.sin(theta) +
                   envelope * TAU * 0.72 * Math.cos(theta));
+              const transverse = wave + strandDrift * rootEnvelope;
+              const transverseDerivative =
+                waveDerivative + strandDrift * rootEnvelopeDerivative;
               return {
-                x: startX + radiator.nx * length * unit,
-                y: startY + radiator.ny * length * unit + wave,
-                dx: radiator.nx * length,
-                dy: radiator.ny * length + waveDerivative,
+                x: startX + radiator.nx * length * unit + radiator.qx * transverse,
+                y: startY + radiator.ny * length * unit + radiator.qy * transverse,
+                dx: radiator.nx * length + radiator.qx * transverseDerivative,
+                dy: radiator.ny * length + radiator.qy * transverseDerivative,
               };
             };
             const start = wavePoint(0);
@@ -1241,11 +1384,13 @@
           }
 
           radianceContext.strokeStyle = trunkGradient;
-          radianceContext.lineWidth = radiator.width + (mobile ? 0.55 : 0.82);
-          radianceContext.globalAlpha = 0.13;
+          radianceContext.lineWidth =
+            radiator.width + (isLimb ? (mobile ? 0.35 : 0.52) : mobile ? 0.48 : 0.68);
+          radianceContext.globalAlpha = isLimb ? 0.09 : 0.12;
           radianceContext.stroke();
           radianceContext.lineWidth = radiator.width * (mobile ? 0.9 : 1);
-          radianceContext.globalAlpha = radiator.alpha * (0.83 + pulse * 0.16);
+          radianceContext.globalAlpha =
+            radiator.alpha * (isLimb ? 0.76 + pulse * 0.17 : 0.85 + pulse * 0.14);
           radianceContext.stroke();
           continue;
         }
