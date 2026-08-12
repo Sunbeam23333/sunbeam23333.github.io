@@ -1282,7 +1282,46 @@
           innerGradient.addColorStop(1, "rgba(78, 53, 221, 0)");
           radianceContext.strokeStyle = innerGradient;
           radianceContext.lineWidth = (radiator.width + 0.08) * (mobile ? 0.88 : 1);
-          radianceContext.globalAlpha = 0.88 + pulse * 0.1;
+          const leafFlicker =
+            0.5 + 0.5 * Math.sin(seconds * 2.2 + radiator.phase * 1.43);
+          radianceContext.globalAlpha = 0.68 + pulse * 0.08 + leafFlicker * 0.13;
+          radianceContext.stroke();
+
+          const leafShimmerProgress =
+            (seconds * 0.32 + radiator.phase / TAU) % 1;
+          const leafShimmerCenter = 0.17 + leafShimmerProgress * 0.66;
+          const leafShimmer = radianceContext.createLinearGradient(
+            originX,
+            originY,
+            tipX,
+            tipY,
+          );
+          leafShimmer.addColorStop(0, "rgba(255, 255, 255, 0)");
+          leafShimmer.addColorStop(
+            leafShimmerCenter - 0.14,
+            "rgba(228, 247, 255, 0)",
+          );
+          leafShimmer.addColorStop(
+            leafShimmerCenter - 0.035,
+            "rgba(240, 252, 255, 0.24)",
+          );
+          leafShimmer.addColorStop(
+            leafShimmerCenter,
+            "rgba(255, 255, 255, 0.96)",
+          );
+          leafShimmer.addColorStop(
+            leafShimmerCenter + 0.04,
+            "rgba(255, 247, 225, 0.36)",
+          );
+          leafShimmer.addColorStop(
+            leafShimmerCenter + 0.14,
+            "rgba(205, 231, 255, 0)",
+          );
+          leafShimmer.addColorStop(1, "rgba(205, 231, 255, 0)");
+          radianceContext.strokeStyle = leafShimmer;
+          radianceContext.lineWidth =
+            Math.max(0.2, radiator.width * (mobile ? 0.45 : 0.54));
+          radianceContext.globalAlpha = 0.7 + leafFlicker * 0.2;
           radianceContext.stroke();
           continue;
         }
@@ -1306,11 +1345,12 @@
             gradientEndY,
           );
           trunkGradient.addColorStop(0, "rgba(255, 255, 250, 1)");
-          trunkGradient.addColorStop(0.07, "rgba(255, 252, 239, 1)");
-          trunkGradient.addColorStop(0.22, "rgba(228, 252, 255, 0.98)");
-          trunkGradient.addColorStop(0.49, "rgba(110, 230, 255, 0.92)");
-          trunkGradient.addColorStop(0.74, "rgba(48, 125, 255, 0.68)");
-          trunkGradient.addColorStop(0.92, "rgba(91, 62, 224, 0.34)");
+          trunkGradient.addColorStop(0.08, "rgba(255, 255, 255, 1)");
+          trunkGradient.addColorStop(0.22, "rgba(255, 239, 199, 1)");
+          trunkGradient.addColorStop(0.4, "rgba(224, 202, 162, 0.98)");
+          trunkGradient.addColorStop(0.62, "rgba(188, 218, 242, 0.9)");
+          trunkGradient.addColorStop(0.82, "rgba(83, 151, 255, 0.58)");
+          trunkGradient.addColorStop(0.93, "rgba(103, 75, 225, 0.3)");
           trunkGradient.addColorStop(1, "rgba(91, 62, 224, 0)");
 
           radianceContext.beginPath();
@@ -1388,9 +1428,60 @@
             radiator.width + (isLimb ? (mobile ? 0.35 : 0.52) : mobile ? 0.48 : 0.68);
           radianceContext.globalAlpha = isLimb ? 0.09 : 0.12;
           radianceContext.stroke();
+          const flicker =
+            0.5 +
+            0.5 *
+              Math.sin(
+                seconds * (isLimb ? 2.45 : 2.85) +
+                  radiator.phase * 1.37 +
+                  radiator.row * 0.11,
+              );
           radianceContext.lineWidth = radiator.width * (mobile ? 0.9 : 1);
           radianceContext.globalAlpha =
-            radiator.alpha * (isLimb ? 0.76 + pulse * 0.17 : 0.85 + pulse * 0.14);
+            radiator.alpha *
+            (isLimb
+              ? 0.66 + pulse * 0.13 + flicker * 0.11
+              : 0.66 + pulse * 0.1 + flicker * 0.12);
+          radianceContext.stroke();
+
+          // A narrow specular band continuously travels from the white root to
+          // the cool platinum tip. Every bundle has a slightly different phase,
+          // so the tree stays alive without blinking in unison.
+          const shimmerProgress =
+            (seconds * (isLimb ? 0.4 : 0.52) + radiator.phase / TAU) % 1;
+          const shimmerCenter = 0.16 + shimmerProgress * 0.68;
+          const shimmerGradient = radianceContext.createLinearGradient(
+            originX,
+            originY,
+            gradientEndX,
+            gradientEndY,
+          );
+          shimmerGradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+          shimmerGradient.addColorStop(
+            shimmerCenter - 0.14,
+            "rgba(238, 249, 255, 0)",
+          );
+          shimmerGradient.addColorStop(
+            shimmerCenter - 0.04,
+            "rgba(242, 252, 255, 0.28)",
+          );
+          shimmerGradient.addColorStop(
+            shimmerCenter,
+            "rgba(255, 255, 255, 0.98)",
+          );
+          shimmerGradient.addColorStop(
+            shimmerCenter + 0.045,
+            "rgba(255, 247, 229, 0.42)",
+          );
+          shimmerGradient.addColorStop(
+            shimmerCenter + 0.14,
+            "rgba(210, 232, 255, 0)",
+          );
+          shimmerGradient.addColorStop(1, "rgba(210, 232, 255, 0)");
+          radianceContext.strokeStyle = shimmerGradient;
+          radianceContext.lineWidth =
+            Math.max(0.24, radiator.width * (isLimb ? 0.54 : 0.64));
+          radianceContext.globalAlpha = isLimb ? 0.72 : 0.88;
           radianceContext.stroke();
           continue;
         }
@@ -1495,8 +1586,12 @@
 
         radianceContext.strokeStyle = fiberGradient;
         radianceContext.lineWidth = radiator.width * (mobile ? 0.9 : 1);
+        const ambientFlicker =
+          0.5 + 0.5 * Math.sin(seconds * 2.55 + radiator.phase * 1.21);
         radianceContext.globalAlpha =
-          (0.42 + pulse * 0.18) * (0.8 + radiator.strength * 0.2) * radiator.alpha;
+          (0.38 + pulse * 0.14 + ambientFlicker * 0.1) *
+          (0.8 + radiator.strength * 0.2) *
+          radiator.alpha;
         radianceContext.stroke();
       }
 
@@ -1526,31 +1621,91 @@
       veinContext.globalAlpha = breathe;
       veinContext.fillRect(tree.x, tree.y, tree.size, tree.size);
 
-      veinContext.globalCompositeOperation = "lighter";
+      const trunkCenterX = tree.x + tree.size * 0.5;
+      const trunkHalfWidth = Math.max(2.9, tree.size * 0.0072);
+      const trunkTop = tree.y + tree.size * 0.425;
+      const trunkBottom = tree.y + tree.size * 0.715;
+
+      // The trunk's material gradient is intentionally much narrower than the
+      // old broad spotlight: pure white at the centre, cool platinum at both
+      // visible edges, with the original vein mask preserving its silhouette.
+      veinContext.globalCompositeOperation = "source-over";
       veinContext.globalAlpha = 1;
-      const trunkBreathe = 0.9 + Math.sin(seconds * (TAU / 6) + 0.35) * 0.1;
-      const trunkBeam = veinContext.createLinearGradient(
-        tree.x + tree.size * 0.425,
+      const trunkMaterial = veinContext.createLinearGradient(
+        trunkCenterX - trunkHalfWidth,
         0,
-        tree.x + tree.size * 0.575,
+        trunkCenterX + trunkHalfWidth,
         0,
       );
-      trunkBeam.addColorStop(0, "rgba(184, 214, 255, 0)");
-      trunkBeam.addColorStop(0.19, `rgba(211, 232, 255, ${0.34 * trunkBreathe})`);
-      trunkBeam.addColorStop(0.39, `rgba(248, 253, 255, ${0.76 * trunkBreathe})`);
-      trunkBeam.addColorStop(0.5, `rgba(255, 253, 242, ${0.98 * trunkBreathe})`);
-      trunkBeam.addColorStop(0.61, `rgba(255, 255, 255, ${0.82 * trunkBreathe})`);
-      trunkBeam.addColorStop(0.82, `rgba(198, 224, 255, ${0.3 * trunkBreathe})`);
-      trunkBeam.addColorStop(1, "rgba(184, 214, 255, 0)");
-      veinContext.fillStyle = trunkBeam;
+      trunkMaterial.addColorStop(0, "rgba(138, 153, 181, 1)");
+      trunkMaterial.addColorStop(0.16, "rgba(177, 188, 205, 1)");
+      trunkMaterial.addColorStop(0.32, "rgba(219, 211, 194, 1)");
+      trunkMaterial.addColorStop(0.43, "rgba(249, 244, 232, 1)");
+      trunkMaterial.addColorStop(0.5, "rgba(255, 255, 255, 1)");
+      trunkMaterial.addColorStop(0.57, "rgba(250, 245, 232, 1)");
+      trunkMaterial.addColorStop(0.68, "rgba(215, 207, 190, 1)");
+      trunkMaterial.addColorStop(0.84, "rgba(173, 185, 204, 1)");
+      trunkMaterial.addColorStop(1, "rgba(134, 150, 180, 1)");
+      veinContext.fillStyle = trunkMaterial;
       veinContext.fillRect(
-        tree.x + tree.size * 0.405,
-        tree.y + tree.size * 0.455,
-        tree.size * 0.19,
-        tree.size * 0.285,
+        trunkCenterX - trunkHalfWidth,
+        trunkTop,
+        trunkHalfWidth * 2,
+        trunkBottom - trunkTop,
       );
 
-      const progress = (seconds % 6) / 6;
+      veinContext.globalCompositeOperation = "lighter";
+      const persistentFlicker = Math.max(
+        0.42,
+        0.68 +
+          Math.sin(seconds * 2.65 + 0.3) * 0.22 +
+          Math.sin(seconds * 4.17 + 1.2) * 0.1,
+      );
+      const innerHalfWidth = Math.max(0.75, tree.size * 0.00135);
+      const innerCore = veinContext.createLinearGradient(
+        trunkCenterX - innerHalfWidth,
+        0,
+        trunkCenterX + innerHalfWidth,
+        0,
+      );
+      innerCore.addColorStop(0, "rgba(222, 237, 255, 0)");
+      innerCore.addColorStop(0.28, `rgba(246, 252, 255, ${0.42 * persistentFlicker})`);
+      innerCore.addColorStop(0.5, `rgba(255, 255, 255, ${persistentFlicker})`);
+      innerCore.addColorStop(0.72, `rgba(255, 249, 235, ${0.46 * persistentFlicker})`);
+      innerCore.addColorStop(1, "rgba(222, 237, 255, 0)");
+      veinContext.fillStyle = innerCore;
+      veinContext.fillRect(
+        trunkCenterX - innerHalfWidth,
+        trunkTop,
+        innerHalfWidth * 2,
+        trunkBottom - trunkTop,
+      );
+
+      const trunkFlowProgress = (seconds % 2.85) / 2.85;
+      const trunkFlowY = trunkBottom - (trunkBottom - trunkTop) * trunkFlowProgress;
+      const trunkFlowRadius = Math.max(8, tree.size * 0.018);
+      const trunkFlow = veinContext.createLinearGradient(
+        0,
+        trunkFlowY - trunkFlowRadius,
+        0,
+        trunkFlowY + trunkFlowRadius,
+      );
+      trunkFlow.addColorStop(0, "rgba(210, 230, 255, 0)");
+      trunkFlow.addColorStop(0.3, "rgba(224, 242, 255, 0.18)");
+      trunkFlow.addColorStop(0.46, "rgba(248, 253, 255, 0.72)");
+      trunkFlow.addColorStop(0.5, "rgba(255, 255, 255, 1)");
+      trunkFlow.addColorStop(0.56, "rgba(255, 244, 224, 0.54)");
+      trunkFlow.addColorStop(0.76, "rgba(216, 235, 255, 0.12)");
+      trunkFlow.addColorStop(1, "rgba(210, 230, 255, 0)");
+      veinContext.fillStyle = trunkFlow;
+      veinContext.fillRect(
+        trunkCenterX - trunkHalfWidth * 1.35,
+        trunkFlowY - trunkFlowRadius,
+        trunkHalfWidth * 2.7,
+        trunkFlowRadius * 2,
+      );
+
+      const progress = (seconds % 4.2) / 4.2;
       const energyY = tree.y + tree.size * (1.03 - progress * 1.08);
       const energy = veinContext.createLinearGradient(
         0,
@@ -1571,7 +1726,7 @@
         tree.size * 0.044,
       );
 
-      const sheenProgress = ((seconds + 1.35) % 7.5) / 7.5;
+      const sheenProgress = ((seconds + 1.35) % 5.4) / 5.4;
       const sheenX = tree.x + tree.size * (-0.05 + sheenProgress * 1.1);
       const sheen = veinContext.createLinearGradient(
         sheenX - tree.size * 0.018,
@@ -1592,7 +1747,8 @@
         tree.size,
       );
 
-      const corePulse = Math.pow(Math.max(0, Math.sin(progress * Math.PI)), 7);
+      const corePulse =
+        0.35 + 0.65 * (0.5 + 0.5 * Math.sin(seconds * (TAU / 2.8) + 0.42));
       const coreX = tree.x + tree.size * 0.5;
       const coreY = tree.y + tree.size * 0.51;
       const core = veinContext.createRadialGradient(
@@ -1612,6 +1768,73 @@
       veinContext.globalCompositeOperation = "destination-in";
       veinContext.globalAlpha = 1;
       veinContext.drawImage(veinMaskImage, tree.x, tree.y, tree.size, tree.size);
+
+      // Reinforce the very thin source artwork with a narrow material spine so
+      // the white-to-platinum cross-section remains visible at normal page
+      // scale. It follows the already-established trunk centre and does not
+      // alter any fiber attachment points.
+      const spineTop = tree.y + tree.size * 0.435;
+      const spineBottom = tree.y + tree.size * 0.677;
+      const spineHalfWidth = Math.max(2.4, tree.size * 0.004);
+      const spineGradient = veinContext.createLinearGradient(
+        trunkCenterX - spineHalfWidth,
+        0,
+        trunkCenterX + spineHalfWidth,
+        0,
+      );
+      spineGradient.addColorStop(0, "rgba(130, 139, 158, 0.94)");
+      spineGradient.addColorStop(0.18, "rgba(170, 166, 151, 0.98)");
+      spineGradient.addColorStop(0.34, "rgba(211, 180, 128, 1)");
+      spineGradient.addColorStop(0.44, "rgba(250, 230, 192, 1)");
+      spineGradient.addColorStop(0.49, "rgba(255, 255, 255, 1)");
+      spineGradient.addColorStop(0.51, "rgba(255, 255, 255, 1)");
+      spineGradient.addColorStop(0.58, "rgba(250, 229, 189, 1)");
+      spineGradient.addColorStop(0.72, "rgba(207, 176, 124, 1)");
+      spineGradient.addColorStop(0.86, "rgba(168, 165, 151, 0.98)");
+      spineGradient.addColorStop(1, "rgba(127, 137, 157, 0.94)");
+      const traceSpine = () => {
+        veinContext.beginPath();
+        veinContext.moveTo(trunkCenterX, spineTop);
+        veinContext.bezierCurveTo(
+          trunkCenterX - tree.size * 0.0008,
+          tree.y + tree.size * 0.515,
+          trunkCenterX + tree.size * 0.00065,
+          tree.y + tree.size * 0.625,
+          trunkCenterX,
+          spineBottom,
+        );
+      };
+      veinContext.globalCompositeOperation = "source-over";
+      veinContext.globalAlpha = 0.58 + persistentFlicker * 0.28;
+      veinContext.lineCap = "round";
+      veinContext.strokeStyle = spineGradient;
+      veinContext.lineWidth = spineHalfWidth * 2;
+      traceSpine();
+      veinContext.stroke();
+
+      veinContext.globalCompositeOperation = "lighter";
+      veinContext.strokeStyle = `rgba(255, 255, 255, ${0.16 + persistentFlicker * 0.74})`;
+      veinContext.lineWidth = Math.max(0.38, tree.size * 0.00055);
+      traceSpine();
+      veinContext.stroke();
+
+      const spineGlint = veinContext.createLinearGradient(
+        0,
+        trunkFlowY - trunkFlowRadius,
+        0,
+        trunkFlowY + trunkFlowRadius,
+      );
+      spineGlint.addColorStop(0, "rgba(221, 238, 255, 0)");
+      spineGlint.addColorStop(0.34, "rgba(234, 248, 255, 0.18)");
+      spineGlint.addColorStop(0.48, "rgba(255, 255, 255, 0.9)");
+      spineGlint.addColorStop(0.52, "rgba(255, 255, 255, 1)");
+      spineGlint.addColorStop(0.6, "rgba(255, 245, 226, 0.46)");
+      spineGlint.addColorStop(1, "rgba(215, 235, 255, 0)");
+      veinContext.strokeStyle = spineGlint;
+      veinContext.lineWidth = Math.max(1.1, tree.size * 0.0018);
+      veinContext.globalAlpha = 0.9;
+      traceSpine();
+      veinContext.stroke();
       veinContext.restore();
     };
 
@@ -1638,14 +1861,14 @@
       context.drawImage(radianceCanvas, 0, 0, width, height);
 
       context.filter = `blur(${Math.max(2, tree.size * 0.0045)}px)`;
-      context.globalAlpha = 0.27;
+      context.globalAlpha = 0.3;
       context.drawImage(veinCanvas, 0, 0, width, height);
       context.filter = "none";
       context.globalCompositeOperation = "source-over";
       context.globalAlpha = 0.99;
       context.drawImage(veinCanvas, 0, 0, width, height);
       context.globalCompositeOperation = "lighter";
-      context.globalAlpha = 0.3;
+      context.globalAlpha = 0.12;
       context.drawImage(veinCanvas, 0, 0, width, height);
       context.restore();
     };
