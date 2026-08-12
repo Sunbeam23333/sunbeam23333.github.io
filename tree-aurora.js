@@ -121,8 +121,12 @@
       sampleContext.clearRect(0, 0, sampleSize, sampleSize);
       sampleContext.drawImage(flowMaskImage, 0, 0, sampleSize, sampleSize);
       const flowPixels = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
+      sampleContext.clearRect(0, 0, sampleSize, sampleSize);
+      sampleContext.drawImage(veinMaskImage, 0, 0, sampleSize, sampleSize);
+      const veinPixels = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
       const sourceAlphaAt = (x, y) => sourcePixels[(y * sampleSize + x) * 4 + 3];
       const flowAlphaAt = (x, y) => flowPixels[(y * sampleSize + x) * 4 + 3];
+      const veinAlphaAt = (x, y) => veinPixels[(y * sampleSize + x) * 4 + 3];
 
       // A geodesic distance from the lower trunk gives every connected branch a
       // stable root-to-tip direction. Detached leaves fall back to a radial sign.
@@ -301,10 +305,13 @@
           let bestX = -1;
           let bestY = -1;
           let bestAlpha = 64;
+          let bestScore = 64;
           for (let y = cellY; y < Math.min(branchBottom, cellY + gridSize); y += 1) {
             for (let x = cellX; x < Math.min(sampleSize - 2, cellX + gridSize); x += 1) {
               const alpha = flowAlphaAt(x, y);
-              if (alpha > bestAlpha) {
+              const score = alpha + veinAlphaAt(x, y) * 1.8;
+              if (alpha > 64 && score > bestScore) {
+                bestScore = score;
                 bestAlpha = alpha;
                 bestX = x;
                 bestY = y;
@@ -340,6 +347,7 @@
             nx: direction.x,
             ny: direction.y,
             strength: 0.62 + tangent.coherence * 0.38,
+            coherence: tangent.coherence,
             order: random() * 0.62 + outwardness * 0.38,
             outwardness,
             seedNoise: random(),
@@ -715,8 +723,138 @@
         });
       });
 
+      // Build real leaf-shaped bundles directly on the fine branch network.
+      // Every fiber in a bundle opens away from the branch and returns to one
+      // shared tip; this is what makes the light read as a leaf instead of a
+      // spray of independent needles.
+      const leafAnchors = [];
+      const primaryLeafTarget = mode === "wallpaper" ? 158 : 128;
+      const anchorSpacing = (mode === "wallpaper" ? 6.8 : 8) / sampleSize;
+      const leafCandidates = branchCandidates
+        .filter(
+          (candidate) =>
+            candidate.y < 0.735 &&
+            candidate.coherence > 0.28 &&
+            !(
+              candidate.y > 0.43 &&
+              candidate.y < 0.725 &&
+              Math.abs(candidate.x - 0.5) < 0.065
+            ),
+        )
+        .sort(
+          (first, second) =>
+            second.outwardness * 0.34 + second.coherence * 0.2 + second.seedNoise * 0.46 -
+            (first.outwardness * 0.34 + first.coherence * 0.2 + first.seedNoise * 0.46),
+        );
+
+      leafCandidates.forEach((candidate) => {
+        if (leafAnchors.length >= primaryLeafTarget) {
+          return;
+        }
+        const separated = leafAnchors.every(
+          (anchor) =>
+            Math.hypot(candidate.x - anchor.x, candidate.y - anchor.y) >= anchorSpacing,
+        );
+        if (separated) {
+          leafAnchors.push(candidate);
+        }
+      });
+
+      // A second, slightly tighter pass fills short branches that lost a point
+      // during Poisson spacing, without producing a regular comb pattern.
+      if (leafAnchors.length < primaryLeafTarget) {
+        const tighterSpacing = anchorSpacing * 0.72;
+        leafCandidates.forEach((candidate) => {
+          if (leafAnchors.length >= primaryLeafTarget || leafAnchors.includes(candidate)) {
+            return;
+          }
+          const separated = leafAnchors.every(
+            (anchor) =>
+              Math.hypot(candidate.x - anchor.x, candidate.y - anchor.y) >= tighterSpacing,
+          );
+          if (separated) {
+            leafAnchors.push(candidate);
+          }
+        });
+      }
+
+      const leafParents = [];
+      const leafColorSequence = [0, 0, 0, 1, 1, 2, 3, 4];
+      const addLeaf = (candidate, ordinal, sideScale = 1, forceOpposite = false) => {
+        const branchNormalX = -candidate.ny;
+        const branchNormalY = candidate.nx;
+        const radialX = candidate.x - 0.5;
+        const radialY = candidate.y - 0.5;
+        const outwardSide = branchNormalX * radialX + branchNormalY * radialY >= 0 ? 1 : -1;
+        let side = ordinal % 3 === 2 ? -outwardSide : outwardSide;
+        if (forceOpposite) {
+          side *= -1;
+        }
+
+        const angle = side * (0.5 + random() * 0.31) * (1 - candidate.outwardness * 0.16);
+        const cosine = Math.cos(angle);
+        const sine = Math.sin(angle);
+        let axisX = candidate.nx * cosine - candidate.ny * sine;
+        let axisY = candidate.nx * sine + candidate.ny * cosine;
+        const axisLength = Math.max(0.001, Math.hypot(axisX, axisY));
+        axisX /= axisLength;
+        axisY /= axisLength;
+
+        const length = (0.033 + random() * 0.019) * sideScale;
+        const halfWidth = length * (0.3 + random() * 0.095);
+        const fiberCount = Math.max(
+          14,
+          Math.round((20 + Math.floor(random() * 13)) * Math.sqrt(sideScale)),
+        );
+        const fiberOffsets = [];
+        const rootJitters = [];
+        const tipNoises = [];
+        const tipLengths = [];
+        for (let fiber = 0; fiber < fiberCount; fiber += 1) {
+          const unit = fiberCount === 1 ? 0 : (fiber / (fiberCount - 1)) * 2 - 1;
+          fiberOffsets.push(Math.sign(unit) * Math.pow(Math.abs(unit), 1.35));
+          rootJitters.push((random() - 0.5) * 0.035);
+          tipNoises.push((random() - 0.5) * 0.045);
+          tipLengths.push((random() - 0.5) * 0.024);
+        }
+
+        leafParents.push({
+          kind: "leaf",
+          x: candidate.x,
+          y: candidate.y,
+          tx: candidate.nx,
+          ty: candidate.ny,
+          nx: axisX,
+          ny: axisY,
+          px: -axisY,
+          py: axisX,
+          length,
+          halfWidth,
+          baseSpan: length * (0.055 + random() * 0.025),
+          curve: (random() - 0.5) * length * 0.095,
+          phase: random() * TAU,
+          speed: TAU / (5.7 + random() * 0.8),
+          width: 0.23 + random() * 0.16,
+          alpha: 0.86 + random() * 0.12,
+          color: leafColorSequence[Math.floor(random() * leafColorSequence.length)],
+          asymmetry: 0.82 + random() * 0.09,
+          fiberCount,
+          fiberOffsets,
+          rootJitters,
+          tipNoises,
+          tipLengths,
+        });
+      };
+
+      leafAnchors.forEach((candidate, index) => {
+        addLeaf(candidate, index);
+        if (index % 5 === 3) {
+          addLeaf(candidate, index, 0.76 + random() * 0.1, true);
+        }
+      });
+
       const trunkParents = [];
-      const trunkRowCount = mode === "wallpaper" ? 34 : 28;
+      const trunkRowCount = mode === "wallpaper" ? 56 : 46;
       for (let row = 0; row < trunkRowCount; row += 1) {
         const targetY = Math.round(
           sampleSize * (0.49 + (row / Math.max(1, trunkRowCount - 1)) * 0.2) +
@@ -775,22 +913,27 @@
             y: (trunkY + directionY * edgeStep) / sampleSize,
             nx: directionX,
             ny: directionY,
-            length: 0.009 + random() * 0.019,
-            bend: (random() - 0.5) * 0.004,
-            phase: row * 0.52 + sideIndex * 0.24,
-            speed: 0.84 + random() * 0.44,
-            width: 0.27 + random() * 0.22,
+            length: 0.014 + random() * 0.018,
+            bend: 0,
+            phase: row * 0.42 + sideIndex * 0.16,
+            speed: TAU / 3.8,
+            width: 0.42 + random() * 0.17,
             color: Math.floor(random() * 2),
-            strength: 0.94,
-            alpha: 0.82 + random() * 0.17,
-            strandCount: 4,
-            strandGap: 0.00062 + random() * 0.00028,
-            strandSpread: 0.008 + random() * 0.008,
-            strandLengths: [0.82, 0.93, 1.02, 0.88],
-            inset: 0.001,
-            sway: 0.00072,
+            strength: 1,
+            alpha: 0.94 + random() * 0.06,
+            strandCount: 7,
+            strandGap: 0.00042 + random() * 0.00018,
+            strandSpread: 0,
+            strandLengths: Array.from({ length: 7 }, (_, strandIndex) => {
+              const distanceFromCenter = Math.abs(strandIndex - 3) / 3;
+              return 0.84 + (1 - distanceFromCenter) * 0.16 + random() * 0.035;
+            }),
+            inset: 0.00048,
+            sway: 0,
             density: 0.9,
             mint: row % 11 === 4 && sideIndex === 0,
+            row,
+            sideIndex,
             kind: "trunk",
           });
         });
@@ -808,40 +951,34 @@
       };
       canopyParents.forEach(prepareStrandDirections);
       fillParents.forEach(prepareStrandDirections);
-      trunkParents.forEach(prepareStrandDirections);
+
+      const backgroundFillParents = fillParents.filter((_, index) => index % 8 === 0);
+      const backgroundCanopyParents = canopyParents.filter((_, index) => index % 6 === 0);
+      [...backgroundFillParents, ...backgroundCanopyParents].forEach((radiator) => {
+        radiator.alpha *= 0.42;
+        radiator.width *= 0.78;
+        radiator.strandCount = Math.min(3, radiator.strandCount);
+      });
 
       radiators.length = 0;
-      radiators.push(...fillParents, ...canopyParents, ...trunkParents);
-      mobileRadiators.length = 0;
-      const mobileClusterDepth = mode === "wallpaper" ? 7 : 6;
-      const mobileCanopyParents = [];
-      for (let depth = 0; depth < mobileClusterDepth; depth += 1) {
-        clusterSeeds.forEach((_, clusterIndex) => {
-          const member = canopyParents.filter(
-            (radiator) => radiator.clusterIndex === clusterIndex,
-          )[depth];
-          if (member) {
-            mobileCanopyParents.push(member);
-          }
-        });
-      }
-      mobileCanopyParents.push(
-        ...canopyParents.filter((radiator) => radiator.density < 0.2).slice(0, 14),
+      radiators.push(
+        ...backgroundFillParents,
+        ...backgroundCanopyParents,
+        ...leafParents,
+        ...trunkParents,
       );
-      const mobileFillParents = [];
-      const mobileFillDepth = mode === "wallpaper" ? 6 : 5;
-      for (let depth = 0; depth < mobileFillDepth; depth += 1) {
-        fillClusterSeeds.forEach((_, clusterIndex) => {
-          const member = fillParents.filter(
-            (radiator) => radiator.fillClusterIndex === clusterIndex,
-          )[depth];
-          if (member) {
-            mobileFillParents.push(member);
-          }
-        });
-      }
+      mobileRadiators.length = 0;
+      const mobileBackgroundParents = [
+        ...backgroundFillParents.filter((_, index) => index % 2 === 0),
+        ...backgroundCanopyParents.filter((_, index) => index % 2 === 0),
+      ];
+      const mobileLeafParents = leafParents.filter((_, index) => index % 2 === 0);
       const mobileTrunkParents = trunkParents.filter((_, index) => index % 2 === 0);
-      mobileRadiators.push(...mobileFillParents, ...mobileTrunkParents, ...mobileCanopyParents);
+      mobileRadiators.push(
+        ...mobileBackgroundParents,
+        ...mobileLeafParents,
+        ...mobileTrunkParents,
+      );
     };
 
     const paintAmbientLight = (seconds, tree) => {
@@ -897,9 +1034,225 @@
 
       for (let index = 0; index < activeRadiators.length; index += 1) {
         const radiator = activeRadiators[index];
+
+        if (radiator.kind === "leaf") {
+          const palette = AURORA_PALETTES[radiator.color];
+          const pulse = 0.5 + 0.5 * Math.sin(seconds * radiator.speed + radiator.phase);
+          const maximumLeafPixels = mobile ? 22 : mode === "wallpaper" ? 36 : 31;
+          const length =
+            Math.min(tree.size * radiator.length, maximumLeafPixels) * (0.94 + pulse * 0.08);
+          const halfWidth =
+            Math.min(tree.size * radiator.halfWidth, length * 0.42) * (0.95 + pulse * 0.08);
+          const baseSpan = Math.min(tree.size * radiator.baseSpan, length * 0.09);
+          const curve = tree.size * radiator.curve;
+          const originX = tree.x + tree.size * radiator.x;
+          const originY = tree.y + tree.size * radiator.y;
+          const tipX = originX + radiator.nx * length + radiator.px * curve;
+          const tipY = originY + radiator.ny * length + radiator.py * curve;
+          const sharedWave = Math.sin(seconds * radiator.speed + radiator.phase) * halfWidth * 0.065;
+          const trailingWave =
+            Math.sin(seconds * radiator.speed + radiator.phase + 0.68) *
+            halfWidth *
+            0.047;
+          const fiberStep = mobile ? 2 : 1;
+
+          const leafGradient = radianceContext.createLinearGradient(
+            originX,
+            originY,
+            tipX,
+            tipY,
+          );
+          leafGradient.addColorStop(0, "rgba(255, 253, 244, 0.99)");
+          leafGradient.addColorStop(0.07, "rgba(248, 253, 255, 0.98)");
+          leafGradient.addColorStop(0.24, "rgba(168, 246, 255, 0.94)");
+          leafGradient.addColorStop(
+            0.54,
+            `rgba(${palette.middle[0]}, ${palette.middle[1]}, ${palette.middle[2]}, 0.9)`,
+          );
+          leafGradient.addColorStop(
+            0.77,
+            `rgba(${palette.outer[0]}, ${palette.outer[1]}, ${palette.outer[2]}, 0.68)`,
+          );
+          leafGradient.addColorStop(
+            0.93,
+            `rgba(${palette.tip[0]}, ${palette.tip[1]}, ${palette.tip[2]}, 0.34)`,
+          );
+          leafGradient.addColorStop(
+            1,
+            `rgba(${palette.tip[0]}, ${palette.tip[1]}, ${palette.tip[2]}, 0)`,
+          );
+
+          const appendLeafFiber = (fiber) => {
+            let offset = radiator.fiberOffsets[fiber];
+            if (offset < 0) {
+              offset *= radiator.asymmetry;
+            }
+            const rootShift = radiator.rootJitters[fiber] * length;
+            const startX =
+              originX + radiator.tx * (offset * baseSpan + rootShift);
+            const startY =
+              originY + radiator.ty * (offset * baseSpan + rootShift);
+            const controlOneAcross = offset * halfWidth * 0.98 + sharedWave;
+            const controlTwoAcross =
+              offset * halfWidth * 0.56 + curve * 0.82 + trailingWave;
+            const controlOneX =
+              originX + radiator.nx * length * 0.28 + radiator.px * controlOneAcross;
+            const controlOneY =
+              originY + radiator.ny * length * 0.28 + radiator.py * controlOneAcross;
+            const controlTwoX =
+              originX + radiator.nx * length * 0.72 + radiator.px * controlTwoAcross;
+            const controlTwoY =
+              originY + radiator.ny * length * 0.72 + radiator.py * controlTwoAcross;
+            const endAcross =
+              curve +
+              offset * halfWidth * 0.025 +
+              radiator.tipNoises[fiber] * halfWidth;
+            const endLength = length * (1 + radiator.tipLengths[fiber]);
+            const endX = originX + radiator.nx * endLength + radiator.px * endAcross;
+            const endY = originY + radiator.ny * endLength + radiator.py * endAcross;
+
+            radianceContext.moveTo(startX, startY);
+            radianceContext.bezierCurveTo(
+              controlOneX,
+              controlOneY,
+              controlTwoX,
+              controlTwoY,
+              endX,
+              endY,
+            );
+          };
+
+          radianceContext.beginPath();
+          for (let fiber = 0; fiber < radiator.fiberCount; fiber += fiberStep) {
+            appendLeafFiber(fiber);
+          }
+          radianceContext.strokeStyle = leafGradient;
+          radianceContext.lineWidth = radiator.width * (mobile ? 0.88 : 1);
+          radianceContext.globalAlpha = radiator.alpha * (0.86 + pulse * 0.12);
+          radianceContext.stroke();
+
+          // A compact ice-white inner band gives the bundle Seed's reflective
+          // centre without adding a solid blue outline around the leaf.
+          radianceContext.beginPath();
+          for (let fiber = 0; fiber < radiator.fiberCount; fiber += fiberStep) {
+            if (Math.abs(radiator.fiberOffsets[fiber]) <= 0.28) {
+              appendLeafFiber(fiber);
+            }
+          }
+          const innerGradient = radianceContext.createLinearGradient(
+            originX,
+            originY,
+            tipX,
+            tipY,
+          );
+          innerGradient.addColorStop(0, "rgba(255, 255, 249, 1)");
+          innerGradient.addColorStop(0.2, "rgba(224, 253, 255, 0.98)");
+          innerGradient.addColorStop(0.58, "rgba(94, 224, 255, 0.72)");
+          innerGradient.addColorStop(0.88, "rgba(59, 105, 255, 0.28)");
+          innerGradient.addColorStop(1, "rgba(78, 53, 221, 0)");
+          radianceContext.strokeStyle = innerGradient;
+          radianceContext.lineWidth = (radiator.width + 0.08) * (mobile ? 0.88 : 1);
+          radianceContext.globalAlpha = 0.88 + pulse * 0.1;
+          radianceContext.stroke();
+          continue;
+        }
+
+        if (radiator.kind === "trunk") {
+          const strandCenter = (radiator.strandCount - 1) / 2;
+          const originX =
+            tree.x + tree.size * radiator.x - radiator.nx * tree.size * radiator.inset;
+          const originY =
+            tree.y + tree.size * radiator.y - radiator.ny * tree.size * radiator.inset;
+          const pulse = 0.5 + 0.5 * Math.sin(seconds * (TAU / 6) + radiator.phase * 0.12);
+          const centerLength = Math.min(tree.size * radiator.length, mobile ? 18 : 23);
+          const gradientEndX = originX + radiator.nx * centerLength;
+          const gradientEndY = originY + radiator.ny * centerLength;
+          const trunkGradient = radianceContext.createLinearGradient(
+            originX,
+            originY,
+            gradientEndX,
+            gradientEndY,
+          );
+          trunkGradient.addColorStop(0, "rgba(255, 255, 250, 1)");
+          trunkGradient.addColorStop(0.07, "rgba(255, 252, 239, 1)");
+          trunkGradient.addColorStop(0.22, "rgba(228, 252, 255, 0.98)");
+          trunkGradient.addColorStop(0.49, "rgba(110, 230, 255, 0.92)");
+          trunkGradient.addColorStop(0.74, "rgba(48, 125, 255, 0.68)");
+          trunkGradient.addColorStop(0.92, "rgba(91, 62, 224, 0.34)");
+          trunkGradient.addColorStop(1, "rgba(91, 62, 224, 0)");
+
+          radianceContext.beginPath();
+          for (let strand = 0; strand < radiator.strandCount; strand += 1) {
+            const strandOffset = strand - strandCenter;
+            const length =
+              Math.min(
+                tree.size * radiator.length * radiator.strandLengths[strand],
+                mobile ? 18 : 23,
+              ) *
+              (0.96 + pulse * 0.08);
+            const startX = originX;
+            const startY = originY + strandOffset * tree.size * radiator.strandGap;
+            const amplitude = Math.min(
+              mobile ? 1.45 : 2,
+              length *
+                (0.068 +
+                  0.022 * Math.sin(radiator.row * 0.37 + radiator.sideIndex * 0.8)),
+            );
+            const wavePoint = (unit) => {
+              const envelope = Math.pow(Math.sin(Math.PI * unit), 2);
+              const envelopeDerivative = Math.PI * Math.sin(TAU * unit);
+              const theta =
+                TAU * (0.72 * unit - seconds / 3.8) +
+                radiator.phase +
+                strandOffset * 0.055;
+              const wave = amplitude * envelope * Math.sin(theta);
+              const waveDerivative =
+                amplitude *
+                (envelopeDerivative * Math.sin(theta) +
+                  envelope * TAU * 0.72 * Math.cos(theta));
+              return {
+                x: startX + radiator.nx * length * unit,
+                y: startY + radiator.ny * length * unit + wave,
+                dx: radiator.nx * length,
+                dy: radiator.ny * length + waveDerivative,
+              };
+            };
+            const start = wavePoint(0);
+            const middle = wavePoint(0.5);
+            const end = wavePoint(1);
+            const handleScale = 0.5 / 3;
+            radianceContext.moveTo(start.x, start.y);
+            radianceContext.bezierCurveTo(
+              start.x + start.dx * handleScale,
+              start.y + start.dy * handleScale,
+              middle.x - middle.dx * handleScale,
+              middle.y - middle.dy * handleScale,
+              middle.x,
+              middle.y,
+            );
+            radianceContext.bezierCurveTo(
+              middle.x + middle.dx * handleScale,
+              middle.y + middle.dy * handleScale,
+              end.x - end.dx * handleScale,
+              end.y - end.dy * handleScale,
+              end.x,
+              end.y,
+            );
+          }
+
+          radianceContext.strokeStyle = trunkGradient;
+          radianceContext.lineWidth = radiator.width + (mobile ? 0.55 : 0.82);
+          radianceContext.globalAlpha = 0.13;
+          radianceContext.stroke();
+          radianceContext.lineWidth = radiator.width * (mobile ? 0.9 : 1);
+          radianceContext.globalAlpha = radiator.alpha * (0.83 + pulse * 0.16);
+          radianceContext.stroke();
+          continue;
+        }
+
         const palette = AURORA_PALETTES[radiator.color];
         const pulse = 0.5 + 0.5 * Math.sin(seconds * radiator.speed + radiator.phase);
-        const maxFiberPixels = mobile ? 20 : mode === "wallpaper" ? 34 : 28;
+        const maxFiberPixels = mobile ? 16 : mode === "wallpaper" ? 24 : 21;
         const centerLength =
           Math.min(tree.size * radiator.length, maxFiberPixels) * (0.88 + pulse * 0.16);
         const gradientStartX =
@@ -998,7 +1351,7 @@
         radianceContext.strokeStyle = fiberGradient;
         radianceContext.lineWidth = radiator.width * (mobile ? 0.9 : 1);
         radianceContext.globalAlpha =
-          (0.6 + pulse * 0.26) * (0.8 + radiator.strength * 0.2) * radiator.alpha;
+          (0.42 + pulse * 0.18) * (0.8 + radiator.strength * 0.2) * radiator.alpha;
         radianceContext.stroke();
       }
 
@@ -1017,8 +1370,8 @@
         tree.x + tree.size * 0.82,
         tree.y + tree.size * 0.02,
       );
-      platinum.addColorStop(0, "rgb(156 167 187)");
-      platinum.addColorStop(0.15, "rgb(228 236 248)");
+      platinum.addColorStop(0, "rgb(218 229 245)");
+      platinum.addColorStop(0.15, "rgb(244 249 255)");
       platinum.addColorStop(0.28, "rgb(255 254 247)");
       platinum.addColorStop(0.44, "rgb(196 207 225)");
       platinum.addColorStop(0.62, "rgb(255 255 252)");
@@ -1030,6 +1383,28 @@
 
       veinContext.globalCompositeOperation = "lighter";
       veinContext.globalAlpha = 1;
+      const trunkBreathe = 0.9 + Math.sin(seconds * (TAU / 6) + 0.35) * 0.1;
+      const trunkBeam = veinContext.createLinearGradient(
+        tree.x + tree.size * 0.425,
+        0,
+        tree.x + tree.size * 0.575,
+        0,
+      );
+      trunkBeam.addColorStop(0, "rgba(184, 214, 255, 0)");
+      trunkBeam.addColorStop(0.19, `rgba(211, 232, 255, ${0.34 * trunkBreathe})`);
+      trunkBeam.addColorStop(0.39, `rgba(248, 253, 255, ${0.76 * trunkBreathe})`);
+      trunkBeam.addColorStop(0.5, `rgba(255, 253, 242, ${0.98 * trunkBreathe})`);
+      trunkBeam.addColorStop(0.61, `rgba(255, 255, 255, ${0.82 * trunkBreathe})`);
+      trunkBeam.addColorStop(0.82, `rgba(198, 224, 255, ${0.3 * trunkBreathe})`);
+      trunkBeam.addColorStop(1, "rgba(184, 214, 255, 0)");
+      veinContext.fillStyle = trunkBeam;
+      veinContext.fillRect(
+        tree.x + tree.size * 0.405,
+        tree.y + tree.size * 0.455,
+        tree.size * 0.19,
+        tree.size * 0.285,
+      );
+
       const progress = (seconds % 6) / 6;
       const energyY = tree.y + tree.size * (1.03 - progress * 1.08);
       const energy = veinContext.createLinearGradient(
@@ -1118,14 +1493,14 @@
       context.drawImage(radianceCanvas, 0, 0, width, height);
 
       context.filter = `blur(${Math.max(2, tree.size * 0.0045)}px)`;
-      context.globalAlpha = 0.2;
+      context.globalAlpha = 0.27;
       context.drawImage(veinCanvas, 0, 0, width, height);
       context.filter = "none";
       context.globalCompositeOperation = "source-over";
-      context.globalAlpha = 0.96;
+      context.globalAlpha = 0.99;
       context.drawImage(veinCanvas, 0, 0, width, height);
       context.globalCompositeOperation = "lighter";
-      context.globalAlpha = 0.22;
+      context.globalAlpha = 0.3;
       context.drawImage(veinCanvas, 0, 0, width, height);
       context.restore();
     };
