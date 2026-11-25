@@ -631,6 +631,36 @@ h3 {
   padding: 4% 0;
 }
 
+.evid-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(120deg, #eff4ff, #f8faf2);
+  text-align: center;
+}
+
+.evid-stats > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.evid-stats strong,
+.evid-stats span {
+  display: block;
+}
+
+.evid-stats strong {
+  color: var(--accent-dark);
+  font: 700 clamp(2rem, 5vw, 4rem) / 1.1 Newsreader, Georgia, serif;
+}
+
+.evid-stats span {
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .project-copy {
   display: flex;
   flex: 1;
