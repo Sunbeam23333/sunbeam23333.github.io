@@ -28,23 +28,10 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Newsreader:opsz,wght@6..72,500;6..72,700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20261125" />
+    <link rel="stylesheet" href="styles.css?v=20261126-optics" />
   </head>
   <body>
     <a class="skip-link" href="#top">Skip to content</a>
-
-    <div class="aurora-bg" aria-hidden="true">
-      <div class="aurora-fallback"></div>
-      <canvas
-        id="aurora-canvas"
-        class="aurora-canvas"
-        data-tree-aurora
-        data-tree-mode="hero"
-        data-tree-mask="assets/cassel-tree-flow-mask.png?v=20260809-tree-v3"
-        data-tree-source-mask="assets/cassel-tree-mask.png?v=20260809-tree-v3"
-        data-tree-veins="assets/cassel-tree-veins.png?v=20260809-tree-v3"
-      ></canvas>
-    </div>
 
     <div class="site-shell">
       <header class="nav">
@@ -109,23 +96,37 @@
             </div>
           </div>
 
-          <aside class="profile-card" aria-label="Profile">
-            <div class="avatar-wrap">
-              <img
-                src="assets/misaka-mikoto-avatar.png"
-                alt="Misaka Mikoto character avatar"
-                width="620"
-                height="538"
-                fetchpriority="high"
-                decoding="async"
-              />
-            </div>
-            <div class="profile-card-copy">
-              <p class="card-kicker">Profile</p>
-              <h2>Haopeng Jin</h2>
-              <p>Multimodal AI · Research &amp; Engineering</p>
-            </div>
-          </aside>
+          <div class="hero-visual">
+            <a class="aurora-bg" href="tree-aurora-wallpaper.html" aria-label="Open the animated Cassel tree wallpaper">
+              <div class="aurora-fallback" aria-hidden="true"></div>
+              <canvas
+                id="aurora-canvas"
+                class="aurora-canvas"
+                data-tree-aurora
+                data-tree-mode="hero"
+                data-tree-mask="assets/cassel-tree-flow-mask.png?v=20260809-tree-v3"
+                data-tree-source-mask="assets/cassel-tree-mask.png?v=20260809-tree-v3"
+                data-tree-veins="assets/cassel-tree-veins.png?v=20260809-tree-v3"
+                aria-hidden="true"
+              ></canvas>
+            </a>
+            <aside class="profile-card" aria-label="Profile">
+              <div class="avatar-wrap">
+                <img
+                  src="assets/misaka-mikoto-avatar.png"
+                  alt="Misaka Mikoto character avatar"
+                  width="620"
+                  height="538"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              </div>
+              <div class="profile-card-copy">
+                <h2>Haopeng Jin</h2>
+                <p>Multimodal AI · Research &amp; Engineering</p>
+              </div>
+            </aside>
+          </div>
         </section>
 
         <div class="metrics" aria-label="Portfolio summary">
@@ -385,7 +386,7 @@
       </footer>
     </div>
 
-    <script src="tree-aurora.js?v=20260812-tree-v8"></script>
+    <script src="tree-aurora.js?v=20261126-optics"></script>
     <script src="script.js?v=20260809-tree-v2"></script>
   </body>
 </html>

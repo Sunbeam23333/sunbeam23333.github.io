@@ -77,85 +77,37 @@ img {
   margin: 0 auto;
 }
 
+.hero-visual {
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  min-width: 0;
+}
+
 .aurora-bg {
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: 0;
-  height: clamp(860px, 112svh, 1080px);
-  overflow: hidden;
-  pointer-events: none;
-  background: #03040a;
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   isolation: isolate;
+  background: #000;
 }
 
-.aurora-bg::before {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  background:
-    linear-gradient(90deg, rgba(3, 4, 10, 0.99) 0%, rgba(3, 4, 10, 0.94) 38%, rgba(3, 4, 10, 0.76) 50%, rgba(3, 4, 10, 0.34) 58%, transparent 64%),
-    radial-gradient(circle at 16% 34%, rgba(18, 26, 48, 0.72), transparent 37rem);
-  content: "";
-}
-
-.aurora-bg::after {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  background:
-    radial-gradient(circle at 78% 70%, rgba(107, 173, 255, 0.1), transparent 22rem),
-    linear-gradient(to bottom, transparent 67%, rgba(246, 242, 234, 0.06) 79%, rgba(246, 242, 234, 0.72) 93%, var(--bg) 100%);
-  content: "";
-}
-
+.aurora-canvas,
 .aurora-fallback {
   position: absolute;
   inset: 0;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse at 61% 45%, rgba(47, 96, 255, 0.26), transparent 32%),
-    radial-gradient(ellipse at 57% 31%, rgba(35, 218, 255, 0.14), transparent 24%),
-    radial-gradient(ellipse at 74% 22%, rgba(129, 73, 255, 0.18), transparent 28%),
-    #03040a;
-}
-
-.aurora-fallback::before,
-.aurora-fallback::after {
-  position: absolute;
-  top: 45%;
-  left: 63%;
-  width: min(42vw, 620px);
-  aspect-ratio: 1;
-  content: "";
-  transform: translate(-50%, -50%);
-  transition: opacity 400ms ease;
-}
-
-.aurora-fallback::before {
-  display: none;
-}
-
-.aurora-fallback::after {
-  background: linear-gradient(150deg, #aeb9cb 2%, #eef5ff 28%, #fffefa 50%, #ffe9bf 72%, #f8fbff 100%);
-  filter: drop-shadow(0 0 4px rgba(242, 248, 255, 0.48)) drop-shadow(0 0 11px rgba(255, 235, 204, 0.18));
-  mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
-  opacity: 0.94;
-  -webkit-mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
-}
-
-.aurora-bg.aurora-ready .aurora-fallback::after {
-  opacity: 0.035;
-}
-
-.aurora-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
-  opacity: 0.98;
-  filter: saturate(1.1) contrast(1.08);
+}
+
+.aurora-fallback {
+  background: url("assets/cassel-seed-optics.webp") center / contain no-repeat;
+}
+
+.aurora-bg.aurora-ready .aurora-fallback {
+  visibility: hidden;
 }
 
 .nav {
@@ -248,9 +200,10 @@ section[id] {
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.72fr);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
   align-items: center;
-  gap: clamp(42px, 6vw, 74px);
+  gap: clamp(12px, 3vw, 48px);
+  isolation: isolate;
   min-height: calc(100vh - 150px);
   padding-top: 18px;
   color: #f7f8ff;
@@ -258,13 +211,11 @@ section[id] {
 
 .hero::before {
   position: absolute;
-  inset: 2% -10% auto;
+  inset: -170px calc(50% - 50vw) -105px;
   z-index: -1;
-  height: 60%;
-  background: radial-gradient(ellipse at 18% 42%, rgba(66, 119, 255, 0.12), transparent 48%);
+  background: linear-gradient(to bottom, #000 calc(100% - 110px), #070b12 calc(100% - 78px), var(--bg));
   content: "";
-  filter: blur(42px);
-  opacity: 0.58;
+  pointer-events: none;
 }
 
 .hero > * {
@@ -419,21 +370,19 @@ h3 {
 }
 
 .profile-card {
-  width: min(100%, 400px);
-  justify-self: end;
-  padding: 18px;
-  border: 1px solid rgba(163, 211, 255, 0.22);
-  border-radius: 34px;
-  background: linear-gradient(160deg, rgba(13, 17, 34, 0.9), rgba(8, 12, 26, 0.66));
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.38), 0 0 70px rgba(54, 107, 255, 0.12);
-  backdrop-filter: blur(18px);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 4px 8px;
+  color: #f7f8ff;
 }
 
 .avatar-wrap {
+  width: clamp(56px, 5.2vw, 76px);
+  aspect-ratio: 1;
   overflow: hidden;
-  aspect-ratio: 1 / 1;
-  border-radius: 26px;
-  background: var(--sage);
+  border-radius: 50%;
+  border: 1px solid #3b424c;
 }
 
 .avatar-wrap img {
@@ -444,27 +393,15 @@ h3 {
   object-position: center 38%;
 }
 
-.profile-card-copy {
-  padding: 20px 7px 5px;
-}
-
-.profile-card-copy .card-kicker {
-  margin-bottom: 8px;
-}
-
 .profile-card-copy h2 {
-  font-family: Inter, sans-serif;
-  font-size: 1.7rem;
-  color: #f7f8ff;
+  margin: 0;
+  font: 650 1.05rem / 1.3 Inter, sans-serif;
 }
 
-.profile-card-copy > p:last-child {
-  margin: 7px 0 0;
-  color: rgba(232, 239, 255, 0.7);
-}
-
-.profile-card .card-kicker {
-  color: #82eaff;
+.profile-card-copy p {
+  margin: 2px 0 0;
+  color: #aab3c4;
+  font-size: 0.83rem;
 }
 
 .metrics {
@@ -791,34 +728,9 @@ footer p {
 }
 
 @media (max-width: 1000px) {
-  .aurora-bg {
-    height: 1510px;
-  }
-
-  .aurora-canvas {
-    bottom: auto;
-    height: 1000px;
-  }
-
   .hero {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .hero-copy {
-    max-width: 850px;
-  }
-
-  .profile-card {
-    width: min(100%, 400px);
-    justify-self: start;
-  }
-
-  .aurora-fallback::before,
-  .aurora-fallback::after {
-    top: 23%;
-    left: 62%;
-    width: min(72vw, 540px);
+    grid-template-columns: minmax(0, 1fr) minmax(265px, 0.9fr);
+    gap: 12px;
   }
 
   .metrics {
@@ -840,19 +752,21 @@ footer p {
 }
 
 @media (max-width: 720px) {
-  .aurora-bg {
-    height: 1490px;
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  .aurora-canvas {
-    height: 900px;
-  }
+  .hero-copy { display: contents; }
+  .hero h1 { order: 1; }
+  .hero .hero-text { order: 3; margin-top: 1rem; }
+  .hero-actions { order: 4; }
+  .signal-row { order: 5; }
 
-  .aurora-fallback::before,
-  .aurora-fallback::after {
-    top: 23.5%;
-    left: 50%;
-    width: 88vw;
+  .hero-visual {
+    order: 2;
+    width: min(100%, 490px);
+    justify-self: center;
   }
 
   .site-shell {
@@ -914,12 +828,7 @@ footer p {
   }
 
   .profile-card {
-    padding: 12px;
-    border-radius: 27px;
-  }
-
-  .avatar-wrap {
-    border-radius: 20px;
+    padding-inline: 2px;
   }
 
   .metrics,

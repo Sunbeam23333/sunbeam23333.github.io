@@ -2,6 +2,7 @@
   "use strict";
 
   const mountedCanvases = new WeakMap();
+  const assetBase = document.currentScript?.src || document.baseURI;
   const TAU = Math.PI * 2;
   const AURORA_PALETTES = [
     { middle: [96, 239, 255], outer: [37, 139, 255], tip: [48, 55, 224] },
@@ -19,7 +20,7 @@
     };
   };
 
-  const createTreeAurora = (canvas, options = {}) => {
+  const createProceduralTree = (canvas, options = {}) => {
     if (!(canvas instanceof HTMLCanvasElement)) {
       return null;
     }
@@ -74,34 +75,9 @@
     let assetFailed = false;
 
     const getTreeRect = () => {
-      const mobile = width <= 720;
-      let size;
-      let centerX;
-      let centerY;
-
-      if (mode === "wallpaper") {
-        size = Math.min(width * (mobile ? 0.88 : 0.6), height * 0.84);
-        centerX = width * 0.5;
-        centerY = height * 0.51;
-      } else if (mobile) {
-        size = Math.min(width * 0.88, height * 0.54);
-        centerX = width * 0.5;
-        centerY = height * 0.37;
-      } else if (width <= 1000) {
-        size = Math.min(width * 0.67, height * 0.51);
-        centerX = width * 0.62;
-        centerY = height * 0.34;
-      } else {
-        size = Math.min(width * 0.42, height * 0.67);
-        centerX = width * 0.63;
-        centerY = height * 0.45;
-      }
-
-      return {
-        x: centerX - size / 2,
-        y: centerY - size / 2,
-        size,
-      };
+      const side = Math.min(width, height);
+      const size = side * (984 / 1280);
+      return { x: (width-size)/2, y: (height-side)/2 + side*(92/1280), size };
     };
 
     const buildGeometry = () => {
@@ -2032,6 +2008,119 @@
       image.src = new URL(source, document.baseURI).href;
     });
 
+    return controller;
+  };
+
+  const createTreeAurora = (canvas, options = {}) => {
+    if (!(canvas instanceof HTMLCanvasElement)) return null;
+    if (mountedCanvases.has(canvas)) return mountedCanvases.get(canvas);
+    if (options.maskSource || options.sourceMaskSource || options.veinMaskSource) {
+      return createProceduralTree(canvas, options);
+    }
+
+    const host = canvas.closest(".aurora-bg, .wallpaper");
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const video = document.createElement("video");
+    const poster = document.createElement("img");
+    const lifetime = new AbortController();
+    const listener = { signal: lifetime.signal };
+    let inView = false;
+    let failed = false;
+    let posterLoaded = false;
+    let posterFailed = false;
+    let fallback = null;
+    const originalDisplay = canvas.style.display;
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      updatePlayback();
+    });
+
+    // The player and still reuse the existing artboard's layout (including its
+    // mobile sizing). Native video composition avoids a main-thread canvas
+    // copy of a 1280² frame on every refresh.
+    for (const element of [video, poster]) {
+      element.className = canvas.className;
+      element.setAttribute("aria-hidden", "true");
+      element.style.objectFit = "contain";
+      element.style.pointerEvents = "none";
+      element.style.display = "none";
+    }
+    video.dataset.treeFilm = "";
+    video.muted = video.defaultMuted = true;
+    video.playsInline = true;
+    video.loop = true;
+    video.preload = "none";
+    poster.alt = "";
+    poster.decoding = "async";
+    canvas.after(poster, video);
+
+    const show = (element) => {
+      canvas.style.display = "none";
+      poster.style.display = element === poster ? "block" : "none";
+      video.style.display = element === video ? "block" : "none";
+      host?.classList.add("aurora-ready");
+    };
+    const updatePlayback = () => {
+      if (fallback || lifetime.signal.aborted) return;
+      if (motion.matches || failed || !inView || document.hidden) {
+        video.pause();
+        if (posterLoaded && (motion.matches || failed)) show(poster);
+        if ((failed && !motion.matches && inView) || (posterFailed && (failed || motion.matches))) {
+          removeMedia();
+          fallback = createProceduralTree(canvas, options);
+        }
+        return;
+      }
+      if (!video.hasAttribute("src")) {
+        video.src = new URL("assets/cassel-seed-optics.mp4", assetBase).href;
+      }
+      video.play().catch(error => {
+        // A hide or preference change may interrupt play before decoding.
+        if (error.name === "AbortError" || lifetime.signal.aborted) return;
+        failed = true;
+        updatePlayback();
+      });
+    };
+    const removeMedia = () => {
+      lifetime.abort();
+      observer.disconnect();
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      video.remove();
+      poster.remove();
+      canvas.style.display = originalDisplay;
+      host?.classList.remove("aurora-ready");
+      mountedCanvases.delete(canvas);
+    };
+    poster.addEventListener("load", () => {
+      posterLoaded = true;
+      if (video.readyState < 2 || motion.matches || failed) show(poster);
+    }, listener);
+    poster.addEventListener("error", () => {
+      posterFailed = true;
+      updatePlayback();
+    }, listener);
+    video.addEventListener("playing", () => {
+      if (!motion.matches) show(video);
+    }, listener);
+    video.addEventListener("error", () => {
+      failed = true;
+      updatePlayback();
+    }, listener);
+    document.addEventListener("visibilitychange", updatePlayback, listener);
+    motion.addEventListener("change", updatePlayback, listener);
+    poster.src = new URL("assets/cassel-seed-optics.webp", assetBase).href;
+    observer.observe(host || canvas.parentElement);
+
+    const controller = {
+      redraw: () => fallback ? fallback.redraw() : updatePlayback(),
+      destroy() {
+        if (fallback) fallback.destroy();
+        else removeMedia();
+      },
+    };
+    mountedCanvases.set(canvas, controller);
     return controller;
   };
 

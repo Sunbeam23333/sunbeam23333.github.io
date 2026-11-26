@@ -1,111 +1,74 @@
-:root {
-  color-scheme: dark;
-}
+:root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  background: #02030a;
-}
-
-body {
-  font-family: Inter, system-ui, sans-serif;
-}
-
-.wallpaper {
-  position: relative;
-  width: 100%;
-  height: 100svh;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 54%, rgba(29, 57, 132, 0.2), transparent 34%),
-    radial-gradient(circle at 78% 20%, rgba(78, 45, 168, 0.13), transparent 28%),
-    linear-gradient(145deg, #010208 0%, #040716 58%, #02030a 100%);
-  isolation: isolate;
-}
-
-.wallpaper::before,
-.wallpaper::after {
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: #000; color: #edf1f6; }
+.wallpaper { position: relative; width: 100%; height: 100svh; overflow: hidden; }
+.wallpaper-canvas, .wallpaper-fallback {
   position: absolute;
   inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  content: "";
-}
-
-.wallpaper::before {
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(circle at center, black, transparent 76%);
-}
-
-.wallpaper::after {
-  background: radial-gradient(circle at center, transparent 48%, rgba(0, 0, 0, 0.7) 112%);
-}
-
-.wallpaper-fallback {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: radial-gradient(circle at 50% 51%, rgba(45, 97, 255, 0.13), transparent 35%);
-}
-
-.wallpaper-fallback::before,
-.wallpaper-fallback::after {
-  position: absolute;
-  top: 51%;
-  left: 50%;
-  width: min(60vw, 84vh);
-  aspect-ratio: 1;
-  content: "";
-  transform: translate(-50%, -50%);
-  transition: opacity 400ms ease;
-}
-
-.wallpaper-fallback::before {
-  display: none;
-}
-
-.wallpaper-fallback::after {
-  background: linear-gradient(150deg, #aeb9cb 2%, #eef5ff 28%, #fffefa 50%, #ffe9bf 72%, #f8fbff 100%);
-  filter: drop-shadow(0 0 4px rgba(242, 248, 255, 0.46)) drop-shadow(0 0 11px rgba(255, 235, 204, 0.16));
-  mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
-  opacity: 0.94;
-  -webkit-mask: url("assets/cassel-tree-veins.png?v=20260809-tree-v3") center / contain no-repeat;
-}
-
-.wallpaper.aurora-ready .wallpaper-fallback::after {
-  opacity: 0.03;
-}
-
-@media (max-width: 720px) {
-  .wallpaper-fallback::before,
-  .wallpaper-fallback::after {
-    width: min(88vw, 84vh);
-  }
-}
-
-.wallpaper-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
-  filter: saturate(1.1) contrast(1.08);
+}
+.wallpaper-fallback {
+  background: #000 url("assets/cassel-seed-optics.webp") center / contain no-repeat;
+}
+.aurora-ready .wallpaper-fallback { visibility: hidden; }
+
+.study-links {
+  position: fixed;
+  bottom: max(1.2rem, env(safe-area-inset-bottom));
+  right: max(1.25rem, env(safe-area-inset-right));
+  display: flex;
+  gap: 1.3rem;
+  z-index: 2;
+  font-size: 0.82rem;
+}
+a { color: #bac5d3; text-underline-offset: 0.28em; }
+a:hover, a:focus-visible { color: #fff; }
+@media (hover: hover) {
+  .study-links { opacity: 0.55; }
+  .study-links:hover, .study-links:focus-within { opacity: 1; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .wallpaper-canvas {
-    filter: saturate(1.08);
-  }
+.comparison {
+  width: min(1600px, 100%);
+  margin-inline: auto;
+  padding: clamp(1rem, 3vw, 3rem);
+}
+.comparison header, .comparison footer, .transport {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.comparison header, .comparison footer { justify-content: space-between; }
+.comparison h1 { margin: 0; font-size: clamp(1.3rem, 2vw, 2rem); font-weight: 500; }
+.comparison figure { min-width: 0; margin: 0; }
+.comparison figcaption { color: #c7cdd6; font-size: 0.94rem; margin-top: 0.75rem; }
+.comparison video {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: #000;
+}
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 16fr) minmax(0, 9fr);
+  gap: clamp(0.75rem, 2.5vw, 3rem);
+  margin: 1.6rem 0;
+}
+.transport {
+  padding: 1.1rem 0;
+  border-block: 1px solid #292c31;
+}
+.transport button { font: inherit; color: #fff; border: 1px solid #59616d; background: #101216; border-radius: 4rem; padding: 0.45rem 1.3rem; cursor: pointer; }
+.transport input { flex: 1; min-width: 100px; accent-color: #b9dafa; }
+.transport output { color: #bfc7d0; font-variant-numeric: tabular-nums; }
+.comparison footer { margin-top: 1.2rem; font-size: 0.88rem; }
+@media (max-width: 680px) {
+  .pair { grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0; }
+  .comparison video { height: clamp(170px, 25svh, 310px); }
+  .comparison figcaption { margin-top: 0.2rem; }
 }
