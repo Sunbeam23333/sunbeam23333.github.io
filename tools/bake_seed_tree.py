@@ -14,6 +14,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from scipy import ndimage, sparse
+from scipy.interpolate import PchipInterpolator
 from scipy.sparse.csgraph import dijkstra
 from skimage.morphology import skeletonize
 
@@ -164,6 +165,39 @@ def prep_skeleton(assets):
     return xs, ys, dist, dd, edge, core, center, bloom, depth, side, thickness
 
 
+def stalk_mapping(depth, cross, side, thickness, nx, ny):
+    """Unwrap the film's curved metallic spine onto the Cassel branch network.
+
+    Calibrated in native (1920x1080) film coordinates. The curve is stationary;
+    its specular colour, width, and surrounding emission are not. Sampling along
+    its normal (rather than horizontal screen rows) preserves the thin reflection
+    even where the stem turns almost horizontal at the floor.
+    """
+    y = np.array([350, 400, 500, 580, 640, 700, 750, 780, 810, 835,
+                  860, 890, 920, 933, 939])
+    x = [787, 835, 916, 964, 987, 997, 1002, 1001, 990, 978,
+         955, 918, 855, 805, 760]
+    centerline = PchipInterpolator(y, x)
+    # Use the hottest source collar where the trunk splits into the crown,
+    # transitioning through champagne to the source's darker bronze beyond it.
+    yc = np.interp(depth, [0, .06, .14, .21, .34, .50, .65],
+                   [916, 875, 795, 690, 560, 435, 350])
+    root_blend = np.clip((ny - .634) / .046, 0, 1)
+    root_blend *= root_blend * (3 - 2 * root_blend)
+    yc += root_blend * (916 + 21 * np.clip(depth / .24, 0, 1) - yc)
+    shoulder = np.interp(yc, y, [6, 6, 6, 9, 12, 15, 15, 15, 14,
+                                  13, 11, 9, 5.5, 3.6, 2.0])
+    slope = centerline.derivative()(yc)
+    normal = cross * side * shoulder / np.hypot(1, slope)
+    uv = cv2.convertMaps((centerline(yc) + normal).astype(np.float32),
+                         (yc - normal * slope).astype(np.float32), cv2.CV_16SC2)
+    # Leave the fine root etching and smallest twigs alone. Transition smoothly
+    # through the first branches; keep a narrow attached halo, not a blue ring.
+    local = np.exp(-((nx / .245) ** 4 + ((ny - .56) / .23) ** 4))
+    coverage = .84 * local * np.clip((thickness - .95) / .83, 0, 1)
+    return uv, coverage * np.exp(-.40 * cross**2)
+
+
 def render(args):
     assets = args.assets
     xs, ys, dist, dd, edge, core, center, bloom, depth, side, thickness = prep_skeleton(
@@ -195,6 +229,7 @@ def render(args):
     )
     radius = thickness * (1 + 0.61 * central) + 0.85 * central
     cross = dd / np.maximum(radius, 0.66)
+    stalk_uv, stalk_weight = stalk_mapping(depth, cross, side, thickness, nx, ny)
     core_section = np.exp(-1.58 * cross**2)
     metal_section = np.exp(-0.75 * cross**2)
     grazed_edge = np.exp(-(((cross - 1.14) / 0.43) ** 2))
@@ -283,6 +318,10 @@ def render(args):
         copper[zone.max(axis=2) < 7] = 0
         clean[38:732, 485:1077] = cv2.inpaint(zone, copper, 4, cv2.INPAINT_TELEA)
         paper = np.zeros((N, N, 3), np.float32)
+        stalk = cv2.remap(src, *stalk_uv, cv2.INTER_LINEAR)
+        # The bloom is formed in screen space after vein forks meet; extending
+        # each nearest-branch UV into the air would create hard Voronoi seams.
+        stalk_halo = cv2.GaussianBlur(stalk * stalk_weight[:, :, None], (0, 0), 5)
         for y, x, m1, m2, w in mappings:
             fan = cv2.remap(clean, m1, m2, cv2.INTER_LINEAR) * w
             h, b = w.shape[:2]
@@ -345,6 +384,12 @@ def render(args):
                 + silver * central
                 + contact * (3 - j * 0.6) * central
             )
+            # Replace just the reflective coating, then screen the already
+            # attached microfilaments over it so the white crest stays sharp.
+            native = stalk[:, :, j]
+            hair = np.clip(52 * filigree + 38 * filament, 0, 90)
+            layer += stalk_weight * (native + hair * (1 - native / 255) - layer)
+            layer += .21 * stalk_halo[:, :, j] * (1 - np.clip(layer / 255, 0, 1))
             # Gentle specular spill mirrors the changing source emission; it is
             # most visible on the fork and never forms an opaque blue outline.
             layer += (

@@ -103,7 +103,7 @@ img {
 }
 
 .aurora-fallback {
-  background: url("assets/cassel-seed-optics.webp") center / contain no-repeat;
+  background: url("assets/cassel-seed-optics.webp?v=stalk2") center / contain no-repeat;
 }
 
 .aurora-bg.aurora-ready .aurora-fallback {

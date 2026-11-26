@@ -15,5 +15,10 @@ The reference animation, branding, and recruitment artwork are from the
 [ByteDance Seed campus recruitment page](https://seed.bytedance.com/zh/seedearlycareer).
 The study links to the official site for applications. The Cassel animation
 maps the reference film's 144 frames onto the tree mask; the wallpaper and
-homepage share one six-second loop. To render it again, run
+homepage share one six-second loop. The crown uses 141 curved projections;
+the trunk and main forks sample both sides of the film's metallic stem along
+its curved normal. The water picks up the same frame's light.
+To render it again, run
 `python3 tools/bake_seed_tree.py assets/seed-leaf-reference.mp4 assets`.
+To compare the encoded trunk (six cross sections, all 144 frames) with the
+source, run `python3 tools/check_stalk.py assets/seed-leaf-reference.mp4 assets/cassel-seed-optics.mp4`.
