@@ -5,33 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#000000">
     <title>Seed 叶片与 Cassel 树 · 光效对照</title>
-    <link rel="stylesheet" href="tree-aurora-wallpaper.css?v=20261126-plane">
+    <link rel="stylesheet" href="tree-aurora-wallpaper.css?v=20261126-sequence">
   </head>
   <body>
     <main class="comparison">
       <header><h1>极光光效对照</h1><a href="tree-aurora-wallpaper.html">全屏树壁纸</a></header>
-      <div class="pair">
-        <figure>
-          <video id="leaf" width="1920" height="1080" muted playsinline loop preload="auto" aria-label="Seed 官网叶片动画">
-            <source src="assets/seed-leaf-reference.mp4" type="video/mp4">
-          </video>
-          <figcaption>Seed · 官网叶片</figcaption>
-        </figure>
-        <figure>
-          <video id="tree" width="1280" height="1280" muted playsinline loop preload="auto" poster="assets/cassel-seed-optics.webp?v=plane3" aria-label="Cassel 树动画">
-            <source src="assets/cassel-seed-optics.mp4?v=plane3" type="video/mp4">
-          </video>
-          <figcaption>Cassel · 树冠与根系</figcaption>
-        </figure>
-      </div>
+      <figure class="pair">
+        <video id="optics" muted playsinline loop controls preload="auto" aria-label="同帧对照：Seed 叶片和 Cassel 树">
+          <source media="(max-width:680px)" src="assets/optics-pair-tall.mp4" type="video/mp4">
+          <source src="assets/optics-pair-wide.mp4" type="video/mp4">
+          <source src="assets/optics-pair-tall.mp4" type="video/mp4">
+        </video>
+        <figcaption><span>Seed · 官网叶片</span><span>Cassel · 树冠与根系</span></figcaption>
+      </figure>
       <div class="transport" aria-label="同步播放控制">
         <button type="button" id="play" disabled>播放</button>
         <input id="phase" type="range" min="0" max="143" value="0" step="1" aria-label="同步查看两段动画的同一帧" disabled>
         <output id="time" for="phase">0.00 / 6.00 s</output>
       </div>
-      <p id="status" role="status">正在载入两段动画…</p>
+      <p id="status" role="status">正在载入同帧光效对照…</p>
       <footer><a href="seed-study/">查看校招页复刻</a><a href="https://seed.bytedance.com/zh/seedearlycareer">字节跳动 Seed 官网</a></footer>
     </main>
-    <script src="aurora-comparison.js"></script>
+    <script src="aurora-comparison.js?v=20261126-sequence"></script>
   </body>
 </html>

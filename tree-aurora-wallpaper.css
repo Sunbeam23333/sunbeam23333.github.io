@@ -44,8 +44,11 @@ a:hover, a:focus-visible { color: #fff; }
 }
 .comparison header, .comparison footer { justify-content: space-between; }
 .comparison h1 { margin: 0; font-size: clamp(1.3rem, 2vw, 2rem); font-weight: 500; }
-.comparison figure { min-width: 0; margin: 0; }
-.comparison figcaption { color: #c7cdd6; font-size: 0.94rem; margin-top: 0.75rem; }
+.comparison figure { position:relative; min-width:0; margin:1.6rem 0; }
+.pair { --split:64%; }
+.pair figcaption { pointer-events:none; color:#d1d6de; font-size:.88rem; }
+.pair figcaption span { position:absolute; top:0; left:0; padding:.35rem .6rem; text-shadow:0 1px 3px #000; }
+.pair figcaption span+span { left:var(--split); }
 .comparison video {
   display: block;
   width: 100%;
@@ -53,12 +56,9 @@ a:hover, a:focus-visible { color: #fff; }
   object-fit: contain;
   background: #000;
 }
-.pair {
-  display: grid;
-  grid-template-columns: minmax(0, 16fr) minmax(0, 9fr);
-  gap: clamp(0.75rem, 2.5vw, 3rem);
-  margin: 1.6rem 0;
-}
+.pair video { aspect-ratio:25/9; }
+.pair[data-format=tall] video { aspect-ratio:8/9; }
+.pair[data-format=tall] figcaption span+span { top:50%; left:0; }
 .transport {
   padding: 1.1rem 0;
   border-block: 1px solid #292c31;
@@ -68,7 +68,7 @@ a:hover, a:focus-visible { color: #fff; }
 .transport output { color: #bfc7d0; font-variant-numeric: tabular-nums; }
 .comparison footer { margin-top: 1.2rem; font-size: 0.88rem; }
 @media (max-width: 680px) {
-  .pair { grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0; }
-  .comparison video { height: clamp(170px, 25svh, 310px); }
-  .comparison figcaption { margin-top: 0.2rem; }
+  .comparison figure { margin:1rem 0; }
+  .pair:not([data-format=wide]) video { aspect-ratio:8/9; }
+  .pair:not([data-format=wide]) figcaption span+span { top:50%; left:0; }
 }

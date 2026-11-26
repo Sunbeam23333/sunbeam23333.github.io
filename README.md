@@ -22,3 +22,8 @@ To render it again, run
 `python3 tools/bake_seed_tree.py assets/seed-leaf-reference.mp4 assets`.
 To compare the encoded trunk (six cross sections, all 144 frames) with the
 source, run `python3 tools/check_stalk.py assets/seed-leaf-reference.mp4 assets/cassel-seed-optics.mp4`.
+
+After replacing either movie, run `python3 tools/bake_comparison.py` as well.
+It encodes one six-second video per layout (side by side on large screens,
+stacked on phones). Both panels in a decoded picture are always from the same
+source frame; playback, scrubbing and looping need no JavaScript clock correction.
