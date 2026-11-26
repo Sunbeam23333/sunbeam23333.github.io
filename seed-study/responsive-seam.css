@@ -1,0 +1,46 @@
+/* At exactly 767 CSS px the reference's inclusive tablet and mobile rules
+   overlap: tablet canvas and type sizes, but mobile stacking in some sections.
+   Keep these peculiarities confined to this single breakpoint. */
+@media (width:767px) {
+  .qualities h2 { line-height:28px; }
+  .qualities .ornament::after { margin-left:auto; }
+  .seam-traits { display:grid; gap:50px; width:343px; }
+  .seam-traits .trait { gap:15px; }
+  .seam-traits .trait img { width:80px; height:80px; }
+  .seam-traits .trait div,.seam-traits .trait p { width:248px; }
+  .seam-traits .trait h3 { font-size:18px; line-height:20px; }
+  .seam-traits .trait p { font-size:14px; line-height:1.4; margin-left:0; min-height:2.8em; }
+  .seam-traits .trait:not(.trait-1) p { min-height:4.2em; }
+  .seam-traits :is(.trait-2,.trait-4) { text-align:left; }
+  .seam-traits :is(.trait-2,.trait-4) h3 { max-width:100%; width:max-content; margin-left:0; }
+
+  .benefits { min-height:0; }
+  .benefit-grid p { font-size:14px; line-height:1.71; }
+  .benefit-grid p:last-child { margin-top:18px; }
+  .model-rail { flex-direction:column; overflow:visible; padding:0 44px 0 16px; gap:24px; cursor:auto; }
+  .model { width:600px; flex:none; }
+  .model h3 { line-height:1.5; }
+  .model p { line-height:1.57; }
+
+  .faq { --initial-faq:0px; }
+  .faq-tabs { padding-bottom:14px; }
+  .faq-position { width:4px; height:4px; }
+  .answers summary { padding:20px 0; }
+  .answers summary::before,.answer::before { width:28px; height:18px; line-height:18px; border-radius:10px; padding:0; font-size:14px; }
+  .answers summary::after { height:20px; width:20px; margin-top:0; }
+  .answer { padding-bottom:20px; line-height:1.85; }
+  /* Keep the independently worded graduate introduction on the same nine
+     display lines; otherwise its middle paragraph orphans two characters. */
+  .faq:has(#graduate-tab[aria-selected="true"]) details:first-child .answer { letter-spacing:-.033em; }
+  .answer::before { margin-top:3px; }
+
+  footer { --footer-inset:16px; }
+  .footer-brand { display:flex; height:auto; }
+  .footer-brand .return-top { width:150px; }
+  .footer-brand p { position:static; margin-top:20px; }
+  .join-code { position:static; align-items:center; margin-top:20px; }
+  .join-code img { height:100px; width:100px; }
+  .join-code span { display:none; }
+  .credit { min-height:104px; gap:2px 12px; padding:8px 0; }
+  .credit a:last-child { order:-1; width:100%; margin:0 0 24px; }
+}

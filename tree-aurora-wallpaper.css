@@ -46,9 +46,7 @@ a:hover, a:focus-visible { color: #fff; }
 .comparison h1 { margin: 0; font-size: clamp(1.3rem, 2vw, 2rem); font-weight: 500; }
 .comparison figure { position:relative; min-width:0; margin:1.6rem 0; }
 .pair { --split:64%; }
-.pair figcaption { pointer-events:none; color:#d1d6de; font-size:.88rem; }
-.pair figcaption span { position:absolute; top:0; left:0; padding:.35rem .6rem; text-shadow:0 1px 3px #000; }
-.pair figcaption span+span { left:var(--split); }
+.pair figcaption { display:grid; grid-template-columns:var(--split) 1fr; gap:0; padding:.4rem 0 0; color:#d1d6de; font-size:.88rem; }
 .comparison video {
   display: block;
   width: 100%;
@@ -58,7 +56,9 @@ a:hover, a:focus-visible { color: #fff; }
 }
 .pair video { aspect-ratio:25/9; }
 .pair[data-format=tall] video { aspect-ratio:8/9; }
-.pair[data-format=tall] figcaption span+span { top:50%; left:0; }
+.pair[data-format=tall] figcaption { display:flex; flex-wrap:wrap; gap:.25rem 1.4rem; }
+.pair[data-format=tall] figcaption span:first-child::before { content:"上图："; }
+.pair[data-format=tall] figcaption span+span::before { content:"下图："; }
 .transport {
   padding: 1.1rem 0;
   border-block: 1px solid #292c31;
@@ -70,5 +70,7 @@ a:hover, a:focus-visible { color: #fff; }
 @media (max-width: 680px) {
   .comparison figure { margin:1rem 0; }
   .pair:not([data-format=wide]) video { aspect-ratio:8/9; }
-  .pair:not([data-format=wide]) figcaption span+span { top:50%; left:0; }
+  .pair:not([data-format=wide]) figcaption { display:flex; flex-wrap:wrap; gap:.25rem 1.4rem; }
+  .pair:not([data-format=wide]) figcaption span:first-child::before { content:"上图："; }
+  .pair:not([data-format=wide]) figcaption span+span::before { content:"下图："; }
 }

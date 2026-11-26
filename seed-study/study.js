@@ -3,19 +3,6 @@ const artwork = 'assets/';
 const films = 'https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const $ = (selector) => document.querySelector(selector);
-function sizeCanvas() {
-  const width = document.documentElement.clientWidth;
-  // The source scales a 1920-unit canvas from 1024px, while its tablet styles extend to 1279px.
-  const designWidth = width < 767 ? 375 : width < 1024 ? 768 : 1920;
-  document.documentElement.style.setProperty('--scale', width / designWidth);
-  const headerScale = width < 1024 ? width/designWidth : Math.min(1,width/1350);
-  const headerGutter = width < 767 ? 16 : width < 1024 ? 44 : width * 110 / 1920 / headerScale;
-  document.documentElement.style.setProperty('--header-scale',headerScale);
-  document.documentElement.style.setProperty('--header-gutter',headerGutter+'px');
-  document.documentElement.style.setProperty('--header-top',(width < 1280 ? Math.min(44,Math.max(20,width*0.0573)) : 40)+'px');
-}
-sizeCanvas();
-window.addEventListener('resize', sizeCanvas, { passive: true });
 
 const menuItems = [
   ['首页', ''], ['模型', 'models'], ['博客&论文', 'research'], ['Seed Edge', 'seed-edge'], ['加入我们', 'career']
@@ -180,13 +167,21 @@ for(const arrows of document.querySelectorAll('.arrows')){
 }
 const heroFilm=$('.leaf-film');
 let heroVisible=true;
+const stillHero=()=>heroFilm.closest('.hero').classList.add('film-unavailable');
 function syncHero(){
-  if(document.hidden||!heroVisible||reduced.matches){heroFilm.pause();if(reduced.matches&&heroFilm.readyState)heroFilm.currentTime=Math.min(1,heroFilm.duration||1);}
-  else heroFilm.play().catch(()=>{});
+  if(document.hidden||!heroVisible||reduced.matches){heroFilm.pause();return;}
+  heroFilm.play().catch(err=>{if(err.name!=='AbortError'&&!reduced.matches)stillHero();});
 }
 new IntersectionObserver(([entry])=>{heroVisible=entry.isIntersecting;syncHero();}).observe(heroFilm);
 heroFilm.addEventListener('loadedmetadata',syncHero);
-reduced.addEventListener('change',syncHero);document.addEventListener('visibilitychange',syncHero);
+heroFilm.addEventListener('playing',()=>heroFilm.closest('.hero').classList.remove('film-unavailable'));
+heroFilm.addEventListener('error',stillHero);
+heroFilm.querySelector('source').addEventListener('error',stillHero);
+// A failed source can finish before this deferred script gets to register
+// its listener. Browsers may leave video.error null in that case.
+if (!reduced.matches && (heroFilm.error || heroFilm.networkState === heroFilm.NETWORK_NO_SOURCE)) stillHero();
+reduced.addEventListener('change',()=>{heroFilm.load();syncHero();});
+document.addEventListener('visibilitychange',syncHero);
 const modelCards = document.querySelectorAll('.model');
 function loadModelClip(clip) {
   if (!clip.hasAttribute('src')) {
@@ -221,29 +216,60 @@ const syncModelClips = () => modelCards.forEach(syncModelClip);
 document.addEventListener('visibilitychange', syncModelClips);
 reduced.addEventListener('change', syncModelClips);
 if(!reduced.matches){
+  const compactMotion = matchMedia('(max-width:1279px)');
+  const phoneHeading = matchMedia('(max-width:767px)');
+  const titleRuns=[];
+  const titleReveal=new IntersectionObserver(entries=>{
+    for(const entry of entries) if(entry.isIntersecting) {
+      entry.target.classList.add('painted');
+      titleReveal.unobserve(entry.target);
+    }
+  },{rootMargin:'-100px', threshold:.1});
+  function composeTitle(host, text, modelSubtitle) {
+    const seen=Boolean(host.querySelector('.painted'));
+    host.querySelectorAll('.heading-run').forEach(run=>titleReveal.unobserve(run));
+    const fragment=document.createDocumentFragment();
+    // The model invitation wraps at a semantic break on narrow screens.
+    // Each phrase gets its own viewport trigger, including the second line.
+    const lead='你也有机会';
+    const phrases=phoneHeading.matches && modelSubtitle && text.startsWith(lead)
+      ? [lead,text.slice(lead.length)].filter(Boolean) : [text];
+    // Wide screens lift each glyph; compact layouts lift the whole phrase.
+    phrases.forEach(phrase=>{
+      const run=document.createElement('span');run.className='heading-run';
+      (compactMotion.matches ? [phrase] : Array.from(phrase)).forEach((unit,i)=>{
+        const glyph=document.createElement('span');glyph.textContent=unit;
+        glyph.style.setProperty('--delay',i*30+'ms');run.append(glyph);
+      });
+      if(seen)run.classList.add('painted');else titleReveal.observe(run);
+      fragment.append(run);
+    });
+    host.replaceChildren(fragment);
+  }
   for (const title of document.querySelectorAll('h2.reveal')) {
     title.setAttribute('aria-label',title.textContent);
     const walker=document.createTreeWalker(title,NodeFilter.SHOW_TEXT),nodes=[];
     while(walker.nextNode())nodes.push(walker.currentNode);
-    let index=0;
     for(const text of nodes){
-      const run=document.createElement('span');run.className='heading-run';run.setAttribute('aria-hidden','true');
-      for(const character of text.textContent){
-        const glyph=document.createElement('span');glyph.textContent=character;
-        glyph.style.setProperty('--delay',Math.min(index++*25,360)+'ms');run.append(glyph);
-      }
-      text.replaceWith(run);
+      const host=document.createElement('span');host.className='heading-host';host.setAttribute('aria-hidden','true');
+      const value=text.textContent, modelSubtitle=Boolean(title.closest('.models')&&text.parentElement.closest('strong'));
+      composeTitle(host,value,modelSubtitle);text.replaceWith(host);
+      titleRuns.push([host,value,modelSubtitle]);
     }
   }
+  const resizeTitles=()=>titleRuns.forEach(args=>composeTitle(...args));
+  compactMotion.addEventListener('change',resizeTitles);phoneHeading.addEventListener('change',resizeTitles);
   document.body.classList.add('motion');
   const reveal=new IntersectionObserver(entries=>{
     for(const {target,isIntersecting} of entries)if(isIntersecting){target.classList.add('shown');reveal.unobserve(target);}
   },{threshold:.06});
-  for(const node of document.querySelectorAll('.reveal:not(.intro p)'))reveal.observe(node);
+  for(const node of document.querySelectorAll('.reveal:not(.intro p,h2)'))reveal.observe(node);
+  const intro=$('.intro p');
   const introReveal=new IntersectionObserver(([entry])=>{
-    if(entry.isIntersecting){entry.target.classList.add('shown');introReveal.disconnect();}
-  },{threshold:.48});
-  introReveal.observe($('.intro p'));
+    if(entry.isIntersecting)intro.classList.add('lit');
+    else if(!compactMotion.matches)intro.classList.remove('lit');
+  },{rootMargin:'-100px 0px',threshold:.6});
+  introReveal.observe(intro);
   const faqReveal=new IntersectionObserver(([entry])=>{
     if(entry.isIntersecting){entry.target.classList.add('entered');faqReveal.disconnect();}
   });
@@ -252,11 +278,25 @@ if(!reduced.matches){
 const shortcut=$('.apply-shortcut');
 // Keep the floating action above later sections while its empty slot measures scroll progress.
 $('main').append(shortcut);
+const shortcutCopy=document.createElement('span');shortcutCopy.className='shortcut-copy';
+shortcutCopy.append(...shortcut.childNodes);shortcut.append(shortcutCopy);
 let sawApplySpace=false;
+let docked=false;
+function showShortcut(visible){
+  if(visible===docked)return;
+  docked=visible;
+  shortcut.classList.toggle('floating',visible);
+  shortcut.classList.toggle('withdrawing',!visible&&!reduced.matches);
+  shortcut.tabIndex=visible?0:-1;
+}
+shortcut.addEventListener('animationend',event=>{
+  if(event.target===shortcut && !docked)shortcut.classList.remove('withdrawing');
+});
+shortcut.tabIndex=-1;
 function dock(){
   const r=$('.apply-space').getBoundingClientRect();
   if(r.top<innerHeight && r.bottom>0)sawApplySpace=true;
   const nearEnd=scrollY+innerHeight>=document.documentElement.scrollHeight-400;
-  shortcut.classList.toggle('floating',scrollY>0&&sawApplySpace&&r.bottom<innerHeight-50&&!nearEnd);
+  showShortcut(scrollY>0&&sawApplySpace&&r.bottom<innerHeight-50&&!nearEnd);
 }
-addEventListener('scroll',dock,{passive:true});dock();
+addEventListener('scroll',dock,{passive:true});addEventListener('resize',dock,{passive:true});dock();

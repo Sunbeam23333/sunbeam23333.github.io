@@ -6,13 +6,40 @@
   <meta name="robots" content="noindex">
   <meta name="color-scheme" content="dark">
   <title>Seed 大模型人才校招 · 视觉复刻研究</title>
-  <link rel="stylesheet" href="study.css?v=20261126.5">
+  <script>
+    // The artboard and header must be sized before their very first paint.
+    (() => {
+      const root = document.documentElement;
+      let previousWidth;
+      function layout() {
+        const width = root.clientWidth || innerWidth;
+        if (width === previousWidth) return;
+        previousWidth = width;
+        // The reference switches the scale denominator at 752, before its
+        // mobile layout classes change at 767. They are distinct breakpoints.
+        const design = width < 752 ? 375 : width < 1024 ? 768 : 1920;
+        const header = width < 1024 ? width / design : Math.min(1, width / 1350);
+        root.style.setProperty('--scale', width / design);
+        root.style.setProperty('--header-scale', header);
+        root.style.setProperty('--header-gutter', (width < 767 ? 16 : width < 1024 ? 44 : width * 110 / 1920 / header) + 'px');
+        root.style.setProperty('--header-top', (width < 1280 ? Math.min(44, Math.max(20, width * .0573)) : 40) + 'px');
+      }
+      layout();
+      addEventListener('resize', layout, {passive: true});
+      document.addEventListener('DOMContentLoaded', layout, {once: true});
+    })();
+  </script>
+  <link rel="stylesheet" href="study.css?v=20261126.6">
   <link rel="stylesheet" href="nav.css?v=1">
   <link rel="stylesheet" href="field-parity.css?v=20261126.1">
   <link rel="stylesheet" href="lower-parity.css?v=20261126.1">
-  <script defer src="study.js?v=20261126.3"></script>
+  <link rel="stylesheet" href="gallery-parity.css?v=20261126.1">
+  <link rel="stylesheet" href="responsive-seam.css?v=20261126.1">
+  <script defer src="study.js?v=20261126.6"></script>
   <script defer src="field-parity.js?v=20261126.1"></script>
   <script defer src="lower-parity.js?v=20261126.1"></script>
+  <script defer src="gallery-parity.js?v=20261126.1"></script>
+  <script defer src="responsive-seam.js?v=20261126.1"></script>
 </head>
 <body>
   <header class="top">
@@ -27,13 +54,14 @@
   </header>
   <main>
     <section class="hero" aria-label="Seed 大模型人才校招">
-      <video class="leaf-film" width="1920" height="1080" playsinline muted loop autoplay preload="auto" poster="assets/leaf-poster.jpg" aria-hidden="true" src="../assets/seed-leaf-reference.mp4"></video>
+      <video class="leaf-film" width="1920" height="1080" playsinline muted loop autoplay preload="auto" aria-hidden="true"><source src="../assets/seed-leaf-reference.mp4" media="(prefers-reduced-motion: no-preference)" type="video/mp4"></video>
+      <div class="leaf-film leaf-still" aria-hidden="true"></div>
       <div class="hero-fade"></div>
       <div class="hero-content">
         <h1><img src="assets/title.svg" alt="字节跳动 Seed 大模型人才校招"></h1>
         <div class="apply-group">
-          <a class="pill primary" data-job="graduate" href="https://jobs.toutiao.com/campus/position?project=7621018151002507573">应届生招聘<span class="tip">2026 年 9 月—2027 年 8 月毕业的本科、硕士及博士同学</span></a>
-          <a class="pill" data-job="intern" href="https://jobs.toutiao.com/campus/position?project=7621018569480046853">实习生招聘<span class="tip">2027 年 9 月及以后毕业的高校在读同学</span></a>
+          <a class="pill primary" data-job="graduate" href="https://jobs.toutiao.com/campus/position?project=7621018151002507573"><span class="pill-label">应届生招聘</span><span class="tip">2026 年 9 月—2027 年 8 月毕业的本科、硕士及博士同学</span></a>
+          <a class="pill" data-job="intern" href="https://jobs.toutiao.com/campus/position?project=7621018569480046853"><span class="pill-label">实习生招聘</span><span class="tip">2027 年 9 月及以后毕业的高校在读同学</span></a>
           <div class="eligibility"><p>应届生招聘（2026 年 9 月—2027 年 8 月毕业的本科、硕士及博士同学）</p><p>实习生招聘（2027 年 9 月及以后毕业的高校在读同学）</p></div>
         </div>
       </div>
