@@ -1598,6 +1598,20 @@
       veinContext.fillRect(tree.x, tree.y, tree.size, tree.size);
 
       const trunkCenterX = tree.x + tree.size * 0.5;
+      // The lightweight canvas fallback has no full geodesic map. Anchor its
+      // wood finish at the fork and limit it to the crown of the vein mask;
+      // the roots and the independent blue-green fibre layer stay as before.
+      const forkY = tree.y + tree.size * 0.51;
+      const branchMetal = veinContext.createRadialGradient(
+        trunkCenterX, forkY, 0, trunkCenterX, forkY, tree.size * 0.57,
+      );
+      branchMetal.addColorStop(0, "rgb(252 254 253)");
+      branchMetal.addColorStop(0.26, "rgb(244 230 222)");
+      branchMetal.addColorStop(0.60, "rgb(214 168 143)");
+      branchMetal.addColorStop(0.83, "rgb(194 144 119)");
+      branchMetal.addColorStop(1, "rgb(160 110 87)");
+      veinContext.fillStyle = branchMetal;
+      veinContext.fillRect(tree.x, tree.y, tree.size, tree.size * 0.64);
       const trunkHalfWidth = Math.max(2.9, tree.size * 0.0072);
       const trunkTop = tree.y + tree.size * 0.425;
       const trunkBottom = tree.y + tree.size * 0.715;
@@ -1617,7 +1631,7 @@
       trunkMaterial.addColorStop(0.16, "rgba(177, 188, 205, 1)");
       trunkMaterial.addColorStop(0.32, "rgba(219, 211, 194, 1)");
       trunkMaterial.addColorStop(0.43, "rgba(249, 244, 232, 1)");
-      trunkMaterial.addColorStop(0.5, "rgba(255, 255, 255, 1)");
+      trunkMaterial.addColorStop(0.5, "rgba(232, 236, 249, 1)");
       trunkMaterial.addColorStop(0.57, "rgba(250, 245, 232, 1)");
       trunkMaterial.addColorStop(0.68, "rgba(215, 207, 190, 1)");
       trunkMaterial.addColorStop(0.84, "rgba(173, 185, 204, 1)");
@@ -1789,7 +1803,7 @@
       veinContext.stroke();
 
       veinContext.globalCompositeOperation = "lighter";
-      veinContext.strokeStyle = `rgba(255, 255, 255, ${0.16 + persistentFlicker * 0.74})`;
+      veinContext.strokeStyle = `rgba(246, 249, 255, ${0.10 + persistentFlicker * 0.55})`;
       veinContext.lineWidth = Math.max(0.38, tree.size * 0.00055);
       traceSpine();
       veinContext.stroke();
@@ -2072,7 +2086,7 @@
         return;
       }
       if (!video.hasAttribute("src")) {
-        video.src = new URL("assets/cassel-seed-optics.mp4?v=plane3", assetBase).href;
+        video.src = new URL("assets/cassel-seed-optics.mp4?v=cassel-copper1", assetBase).href;
       }
       video.play().catch(error => {
         // A hide or preference change may interrupt play before decoding.
@@ -2110,7 +2124,7 @@
     }, listener);
     document.addEventListener("visibilitychange", updatePlayback, listener);
     motion.addEventListener("change", updatePlayback, listener);
-    poster.src = new URL("assets/cassel-seed-optics.webp?v=plane3", assetBase).href;
+    poster.src = new URL("assets/cassel-seed-optics.webp?v=cassel-copper1", assetBase).href;
     observer.observe(host || canvas.parentElement);
 
     const controller = {

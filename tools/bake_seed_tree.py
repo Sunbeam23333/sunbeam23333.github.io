@@ -198,6 +198,32 @@ def stalk_mapping(depth, cross, side, thickness, nx, ny):
     return uv, coverage * np.exp(-.40 * cross**2)
 
 
+def branch_finish(depth, cross, ny):
+    """Cassel's own graded metal finish, limited to the width of each vein.
+
+    Distance is measured along the branch, not by height on the screen:
+    a downward-curving twig must keep its copper finish. The illuminated
+    fork stays pearl-white, while the upper limbs age to a darker bronze.
+    Gains are RGB ratios in the display-referred plate, before reflection.
+    """
+    edge = np.clip((ny - .635) / .050, 0, 1)
+    canopy = 1 - edge * edge * (3 - 2 * edge)
+    weight = canopy * np.exp(-.20 * np.minimum(cross, 4)**4)
+    pos = np.where(weight > .002)
+    length = depth[pos]
+    stops = [0, .10, .145, .19, .245, .31, .365, .47, .58, .68, .80, .92]
+    finish_rgb = np.array([
+        [.911, .919, .977], [.911, .919, .977], [.966, .974, .992],
+        [1, 1, 1], [1.012, 1, .994], [1.045, 1.003, .990],
+        [1.077, 1.003, .963], [1.110, .919, .823],
+        [1.142, .817, .643], [1.083, .734, .540],
+        [.963, .666, .488], [.879, .602, .441],
+    ], dtype=np.float32)
+    bgr = np.column_stack([np.interp(length, stops, channel) for channel in finish_rgb.T[::-1]])
+    gain = 1 + (bgr - 1) * weight[pos][:, None]
+    return pos, gain.astype(np.float32)
+
+
 def render(args):
     assets = args.assets
     xs, ys, dist, dd, edge, core, center, bloom, depth, side, thickness = prep_skeleton(
@@ -229,6 +255,7 @@ def render(args):
     )
     radius = thickness * (1 + 0.61 * central) + 0.85 * central
     cross = dd / np.maximum(radius, 0.66)
+    wood_pixels, wood_finish = branch_finish(depth, cross, ny)
     stalk_uv, stalk_weight = stalk_mapping(depth, cross, side, thickness, nx, ny)
     core_section = np.exp(-1.58 * cross**2)
     metal_section = np.exp(-0.75 * cross**2)
@@ -281,7 +308,7 @@ def render(args):
                 "-preset",
                 "medium",
                 "-crf",
-                "15",
+                "12",
                 "-pix_fmt",
                 "yuv420p",
                 "-movflags",
@@ -404,6 +431,9 @@ def render(args):
         glow = cv2.resize(cv2.GaussianBlur(sub, (0, 0), 4.8), (N, N))
         paper += glow * 0.24
         stage = np.clip(paper, 0, 255).astype(np.uint8)
+        # Change only the exposed metallic line and its immediate shoulders.
+        # Keep the moving intensity pattern and leave the blue/teal fans alone.
+        stage[wood_pixels] = np.clip(np.rint(stage[wood_pixels] * wood_finish), 0, 255).astype(np.uint8)
         # Reproject the current root light onto the plane. The native film's
         # reflection supplies the broken horizontal Fresnel bands and glints.
         fsrcx = (881 + (floor_x - N * 0.5) * 1.35).astype(np.float32)
