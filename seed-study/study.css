@@ -301,3 +301,18 @@ footer { padding:85px 6vw 34px; background:#0a0b0e url("assets/footerv3.png") ce
 }
 .motion .faq { transform:translateY(40px); transition:transform .75s ease-out; }
 .motion .faq.entered { transform:none; }
+
+/* The invitation is four typographic groups, not five short lines. Keep the
+   delayed gradient sign-off and let the middle paragraph reflow on phones. */
+.intro p { display:flex; flex-direction:column; align-items:stretch; }
+.intro-pair { display:flex; flex-direction:column; }
+.intro p > em { margin-top:60px; align-self:flex-start; }
+.tip { backdrop-filter:blur(200px); }
+@media(max-width:1279px) {
+  .intro p { gap:10px; }
+  .intro p > em { margin-top:0; }
+}
+@media(max-width:766px) {
+  .intro-pair { display:block; }
+  .intro.aura::before { width:1200px; }
+}

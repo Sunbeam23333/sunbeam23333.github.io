@@ -1,0 +1,88 @@
+/* The qualities orbit and the research rail share a 100 ms entrance cascade.
+   Let the section trigger all siblings; otherwise offscreen cards appear late
+   when a visitor moves the carousel horizontally. */
+.motion .field-motion-ready :is(.trait,.field) {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: none;
+}
+.motion .field-motion-ready.field-motion-in :is(.trait,.field) {
+  animation: field-rise .72s linear both;
+  animation-delay: calc(var(--item) * .1s + var(--entrance-start, 0s));
+}
+.orbit { --entrance-start: .1s; }
+@keyframes field-rise {
+  0% { opacity:0; transform:translateY(40px); }
+  2.3% { opacity:.1; transform:translateY(39px); }
+  11.5% { opacity:.502; transform:translateY(23px); }
+  21% { opacity:.725; transform:translateY(13px); }
+  30% { opacity:.847; transform:translateY(7px); }
+  39.3% { opacity:.915; transform:translateY(4px); }
+  48.6% { opacity:.954; transform:translateY(2px); }
+  58% { opacity:.976; transform:translateY(1px); }
+  80% { opacity:.996; transform:translateY(.15px); }
+  100% { opacity:1; transform:none; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .motion .field-motion-ready :is(.trait,.field) {
+    animation:none!important; opacity:1; transform:none;
+  }
+}
+.trait h3 { line-height:1.2; }
+.field {
+  --copy-width: 355px;
+  padding-inline:0;
+  background-clip:padding-box;
+  background-position:center;
+  background-color:rgb(255 255 255 / 10%);
+}
+.field > :is(h3,ul) { width:var(--copy-width); margin-inline:auto; }
+.field h3 { line-height:1.2; }
+.field ul { list-style:none; }
+.field li { position:relative; }
+.field li::before {
+  content:""; position:absolute; width:3px; height:3px; left:-10px; top:.7em;
+  transform:translateY(-50%); border-radius:50%; background:rgb(255 255 255 / 30%);
+}
+.directions .arrows button {
+  background:rgb(255 255 255 / 12%);
+  transition:background-color .25s cubic-bezier(.4,0,.2,1);
+}
+.directions .arrows button:disabled { opacity:.5; cursor:not-allowed; }
+.directions .arrows button:hover:enabled { background:rgb(255 255 255 / 20%); }
+@media(min-width:1280px) {
+  .trait-1 div { width:390px; }
+  .trait-1 p { width:365px; }
+  :is(.trait-2,.trait-3) h3 { width:max-content; margin-left:auto; }
+  .trait-2 p { line-height:1.38; }
+  .trait-3 p { width:360px; margin-left:auto; }
+  .trait-4 div { width:340px; }
+  .trait-4 p { width:380px; }
+}
+@media(max-width:1279px) {
+  .field { --copy-width:247px; }
+  .directions-rail { padding-right:16px; }
+}
+@media(min-width:767px) and (max-width:1279px) {
+  .trait { gap:10px; }
+  .trait h3 { line-height:1.66; }
+  :is(.trait-2,.trait-4) h3 { width:max-content; margin-left:auto; }
+  .trait p { line-height:1.4; min-height:2.8em; }
+  .trait-1 div { width:480px; }
+  .trait-1 p { width:481px; }
+  .trait-2 div { width:464px; }
+  .trait-2 p { width:474px; margin-left:-10px; }
+  .trait-3 div { width:490px; }
+  .trait-4 div { width:485px; }
+  .field h3 { line-height:1.5; }
+  .qualities .ornament::after { margin-left:12px; width:60px; height:10px; }
+  .directions .ornament::after { margin-left:10px; }
+}
+@media(max-width:766px) {
+  .trait h3 { line-height:20px; }
+  .trait:not(.trait-1) p { min-height:4.2em; }
+  :is(.trait-2,.trait-4) h3 { width:max-content; max-width:100%; }
+  .directions .ornament { flex:1; }
+  .directions-rail { padding-left:20px; }
+  .field li::before { width:2px; height:2px; }
+}

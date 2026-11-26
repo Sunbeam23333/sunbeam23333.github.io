@@ -23,15 +23,21 @@ const menuItems = [
 function links(items) {
   return items.map(([name, path]) => '<a href="' + official + path + '">' + name + '</a>').join('');
 }
-$('.desktop-nav').innerHTML = links(menuItems);
-$('.mobile-nav').innerHTML = links(menuItems) + '<details open><summary>开始体验</summary><a href="https://www.doubao.com/chat/">体验豆包</a><a href="https://exp.volcengine.com/">AI 体验中心</a></details>';
+const headerLinks = links(menuItems.map(([name,path]) => [name, path+'?view_from=homepage_tab']));
+$('.desktop-nav').innerHTML = headerLinks;
+$('.mobile-nav').innerHTML = headerLinks + '<details open><summary>开始体验</summary>'+$('.experience div').outerHTML+'</details>';
 function setMenu(open) {
+  if (open) $('.mobile-nav details').open = true;
   $('.mobile-nav').hidden = !open;
   $('.menu-toggle').setAttribute('aria-expanded', String(open));
   $('.menu-toggle').setAttribute('aria-label', open ? '关闭导航' : '打开导航');
   document.body.classList.toggle('menu-open',open);
 }
 $('.menu-toggle').addEventListener('click', () => setMenu($('.mobile-nav').hidden));
+matchMedia('(min-width:1280px)').addEventListener('change', () => {
+  setMenu(false);
+  $('.experience').open = false;
+});
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     if (!$('.mobile-nav').hidden) { setMenu(false); $('.menu-toggle').focus(); }
@@ -55,21 +61,21 @@ for (const a of document.querySelectorAll('[data-job]')) {
 }
 
 const traits = [
-  ['有极强的技术信仰和高远目标','愿意投身难题，在长期研究中不断挑战智能的边界。','looking-for-icon-1.0961253b.png'],
+  ['有极强的技术信仰和高远目标','你愿意把时间投入一个尚无答案的技术问题，一次次向模型的能力边界迈进。','looking-for-icon-1.0961253b.png'],
   ['具备出色的研究和实践能力','在大模型的某个方向有扎实积累，能够亲手验证自己的判断，拿出有价值的工作。','looking-for-icon-3.73fb2df6.png'],
-  ['极具好奇心和自驱力','愿意追问问题背后的原因，主动试验，为解决难题投入时间。','looking-for-icon-4.54f0858f.png'],
-  ['心态开放，乐于协同','把系统、算法与工程的不同视角连接起来，与伙伴共同完成复杂研究。','looking-for-icon-2.832d45df.png']
+  ['极具好奇心和自驱力','看到反常的结果时，你会追问它为什么发生，也愿意主动设计实验，把原因弄清楚。','looking-for-icon-4.54f0858f.png'],
+  ['心态开放，乐于协同','从数据到算法，再到分布式训练，你乐于与不同方向的伙伴一起解决跨环节的难题。','looking-for-icon-2.832d45df.png']
 ];
 $('#traits').innerHTML =
   '<img loading="lazy" class="ellipse" src="' + artwork + 'outer-ellipse.3223a9ba.png" alt="">' +
   '<img loading="lazy" class="ellipse inner" src="' + artwork + 'inner-ellipse.d3f8b4c3.png" alt="">' +
   traits.map(([title,body,img],i) => `<article class="trait trait-${i+1} reveal"><img loading="lazy" src="${artwork+img}" alt=""><div><h3>${title}</h3><p>${body}</p></div></article>`).join('');
 const fields = [
-  ['基础大模型','1.c3761f73.png',['高效模型架构与训练方法','语言模型数据压缩','代码智能体与测试时扩展','长周期任务','多智能体强化学习','强化学习的规模化','面向数学发现的 AI','低延迟实时交互','统一多模态模型','高效模型蒸馏','内在奖励与主动探索','记忆、推理与自监督学习']],
-  ['视觉智能','2.dbfaf62c.png',['构建多模态数据基础设施','图像与视频模型评估','多模态预训练','高效通用的视觉表征','融合视觉理解与生成','长链路多模态智能体','工具使用与环境交互']],
-  ['语音智能','3.16de1c64.png',['统一多模态语音理解和生成','个性化语音与在线学习','音频模型强化学习与语音智能体','音频理解、生成与音乐创作']],
-  ['机器学习系统','4.a7dc52ae.png',['集群规模化训练的稳定性、利用率与容错','多模态强化学习的端到端系统设计','推理计算、访存与异构调度','面向新硬件的模型与并行策略','算子编译和通信优化']],
-  ['大模型应用','5.4de9f6e2.png',['搜索内容理解','基于 LLM 的通用检索','训练搜索智能体','提高常见任务准确率','模型记忆机制','个性化大模型','对话情商与语言风格','用户反馈学习']],
+  ['基础大模型','1.c3761f73.png',['探索更节省计算的模型结构与训练方法','研究语言模型的数据压缩','代码智能体的 RL 与推理时算力扩展','跨多个阶段的长期任务','多智能体强化学习','扩大强化学习规模','借助 AI 探索新的数学推理方法','低延迟模型交互','融合多种模态的通用模型','提高知识蒸馏效率','借助内在奖励让模型主动探索新的任务与目标','研究如何让记忆与推理共享表征，并通过自监督训练学到这些能力']],
+  ['视觉智能','2.dbfaf62c.png',['搭建多模态数据管线','改进评估图像与视频模型的实验设计','探索多模态预训练方法','高效学习通用的视觉特征','在一个模型里融合视觉理解与生成','让多模态智能体执行复杂的多步任务','让智能体用工具、从视觉信息中行动']],
+  ['语音智能','3.16de1c64.png',['让音频与其他模态的理解、生成在同一模型中学习','在个性化对话中形成记忆，并保持在线学习','设计音频模型的强化学习方法和训练系统，开发语音智能体','研究声音的理解与合成，以及音乐生成']],
+  ['机器学习系统','4.a7dc52ae.png',['探索跨集群的大规模训练，研究低精度训练、故障恢复和弹性调度如何兼顾作业稳定性与硬件利用率','为负载不断变化的训练设计强化学习系统，让多模态智能体在异构资源上与复杂环境持续交互','缓解推理中的算力和访存限制，在多台机器和不同硬件之间协调计算与调度','研究新一代硬件与模型如何配合，为理解和生成设计更适合的网络结构、训练策略与推理方法','为新硬件编译更高效的算子，综合优化计算任务与设备间的数据通信']],
+  ['大模型应用','5.4de9f6e2.png',['用语言模型改善对检索内容的理解','为通用检索设计大模型方案','训练面向搜索的 Agent','提高模型处理常见任务的准确率','为模型设计记忆机制','探索模型个性化','调节对话的共情能力、角色与表达风格','利用真实用户的反馈']],
   ['具身智能','6.22c4494d.png',['机器人通用操作模型','机器人数据与学习算法','机器人强化学习']]
 ];
 $('#research-rail').innerHTML = fields.map(([title,img,items]) =>
