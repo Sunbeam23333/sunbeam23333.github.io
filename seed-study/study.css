@@ -308,6 +308,10 @@ footer { padding:85px 6vw 34px; background:#0a0b0e url("assets/footerv3.png") ce
 .intro-pair { display:flex; flex-direction:column; }
 .intro p > em { margin-top:60px; align-self:flex-start; }
 .tip { backdrop-filter:blur(200px); }
+.apply-group .pill:is(:hover,:focus-visible,.primary) { color:#000; }
+.apply-group:has(.pill:not(.primary):is(:hover,:focus-visible)) .primary {
+  color:#fffc; background:#ffffff0d; border-color:#ffffff4d;
+}
 @media(max-width:1279px) {
   .intro p { gap:10px; }
   .intro p > em { margin-top:0; }

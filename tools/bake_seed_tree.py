@@ -409,23 +409,25 @@ def render(args):
         fsrcx = (881 + (floor_x - N * 0.5) * 1.35).astype(np.float32)
         fsrcy = (946 + floor_y * 0.78).astype(np.float32)
         floor_tex = cv2.remap(src, fsrcx, fsrcy, cv2.INTER_LINEAR)
-        ripple = np.sin(floor_y * 0.32 + 0.26 * np.sin(t)) + 0.67 * np.sin(
-            floor_y * 0.77 - t
-        )
-        mx = floor_x + ripple * (1 + floor_y * 0.032)
-        my = FLOOR - 1 - floor_y * (2.4 + 0.18 * np.sin(floor_y * 0.19))
+        # The floor in the film is much quieter than the airborne light. Read
+        # the fine horizontal glints from it instead of adding a second clock.
+        plate_luma = cv2.cvtColor(floor_tex, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        water = cv2.GaussianBlur(plate_luma, (13, 3), 3, sigmaY=.65)
+        local_water = cv2.GaussianBlur(water, (5, 13), 1, sigmaY=2.7)
+        glint = np.clip((water - local_water) / (8 + local_water), -1, 1)
+        mx = floor_x + glint * (2.4 + floor_y * .064)
+        my = FLOOR - 1 - floor_y * (2.4 + .12 * glint)
         reflected = cv2.remap(
             stage, mx.astype(np.float32), my.astype(np.float32), cv2.INTER_LINEAR
         )
-        bands = (
-            0.24
-            + 0.6
-            * (0.5 + 0.5 * np.sin(floor_y * 0.73 + 0.5 * np.sin(floor_y * 0.25))) ** 2
-        )
         near_floor = np.clip((167 - floor_y) / 44, 0, 1) * horizon_x
-        floor_color = (
-            reflected * (bands * floor_env * 0.49)[:, :, None]
-            + floor_tex * (near_floor * 1.09)[:, :, None]
+        bare = floor_tex * near_floor[:, :, None]
+        # The reflected roots redistribute the light arriving on each horizontal
+        # strip; they do not add a second copy of its flash on top of the plate.
+        coat = (.24 + .30 * np.maximum(0, glint)) * floor_env
+        floor_color = bare + reflected * (coat * np.sqrt(water / 255))[:, :, None]
+        floor_color *= bare.sum(axis=1, keepdims=True) / np.maximum(
+            floor_color.sum(axis=1, keepdims=True), .0001
         )
         stage[FLOOR:] = np.clip(floor_color + ambient[FLOOR:, :, None], 0, 255).astype(
             np.uint8

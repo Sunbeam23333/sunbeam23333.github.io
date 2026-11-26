@@ -2072,7 +2072,7 @@
         return;
       }
       if (!video.hasAttribute("src")) {
-        video.src = new URL("assets/cassel-seed-optics.mp4?v=stalk2", assetBase).href;
+        video.src = new URL("assets/cassel-seed-optics.mp4?v=plane3", assetBase).href;
       }
       video.play().catch(error => {
         // A hide or preference change may interrupt play before decoding.
@@ -2110,7 +2110,7 @@
     }, listener);
     document.addEventListener("visibilitychange", updatePlayback, listener);
     motion.addEventListener("change", updatePlayback, listener);
-    poster.src = new URL("assets/cassel-seed-optics.webp?v=stalk2", assetBase).href;
+    poster.src = new URL("assets/cassel-seed-optics.webp?v=plane3", assetBase).href;
     observer.observe(host || canvas.parentElement);
 
     const controller = {

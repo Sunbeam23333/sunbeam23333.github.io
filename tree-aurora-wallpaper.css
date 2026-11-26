@@ -11,7 +11,7 @@ body { margin: 0; min-width: 320px; background: #000; color: #edf1f6; }
   height: 100%;
 }
 .wallpaper-fallback {
-  background: #000 url("assets/cassel-seed-optics.webp?v=stalk2") center / contain no-repeat;
+  background: #000 url("assets/cassel-seed-optics.webp?v=plane3") center / contain no-repeat;
 }
 .aurora-ready .wallpaper-fallback { visibility: hidden; }
 
