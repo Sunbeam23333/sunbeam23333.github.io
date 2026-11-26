@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark">
+  <title>Seed 大模型人才校招 · 视觉复刻研究</title>
+  <link rel="stylesheet" href="study.css">
+  <script defer src="study.js"></script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="https://seed.bytedance.com/zh/"><img src="assets/wordmark.png" alt="ByteDance Seed"></a>
+    <nav class="desktop-nav" aria-label="主导航"></nav>
+    <div class="top-actions">
+      <details class="experience"><summary>开始体验 <span>⌄</span></summary><div><a href="https://www.doubao.com/chat/">体验豆包</a><a href="https://exp.volcengine.com/">AI 体验中心</a></div></details>
+      <a class="language" href="https://seed.bytedance.com/en/seedearlycareer" lang="en">EN</a>
+      <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开导航"><i></i><i></i><i></i></button>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="移动端导航" hidden></nav>
+  </header>
+  <main>
+    <section class="hero" aria-label="Seed 大模型人才校招">
+      <video class="leaf-film" width="1920" height="1080" playsinline muted loop autoplay preload="auto" poster="assets/leaf-poster.jpg" aria-hidden="true" src="../assets/seed-leaf-reference.mp4"></video>
+      <div class="hero-fade"></div>
+      <div class="hero-content">
+        <h1><img src="assets/title.svg" alt="字节跳动 Seed 大模型人才校招"></h1>
+        <div class="apply-group">
+          <a class="pill primary" data-job="graduate" href="https://jobs.toutiao.com/campus/position?project=7621018151002507573">应届生招聘<span class="tip">2026 年 9 月—2027 年 8 月毕业的本科、硕士及博士同学</span></a>
+          <a class="pill" data-job="intern" href="https://jobs.toutiao.com/campus/position?project=7621018569480046853">实习生招聘<span class="tip">2027 年 9 月及以后毕业的高校在读同学</span></a>
+          <div class="eligibility"><p>应届生招聘（2026 年 9 月—2027 年 8 月毕业的本科、硕士及博士同学）</p><p>实习生招聘（2027 年 9 月及以后毕业的高校在读同学）</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="intro aura">
+      <p class="reveal">Seed 面向高校招募研究者和工程师，一起探索大模型的下一步。<br>当熟悉的方法遇见瓶颈，新一代模型需要新的思路。<br>从视觉、语音和语言模型，到让它们高效运行的系统，<br><strong>在真实而困难的问题中，寻找还没有人走过的路。</strong><br><em>加入 Seed，把你的想法变成下一代 AI 的能力。</em></p>
+      <div class="apply-space"><a class="apply-shortcut pill" data-job="graduate" href="https://jobs.toutiao.com/campus/position?project=7621018151002507573">立即投递 <span>›</span></a></div>
+    </section>
+    <section class="qualities inset">
+      <h2 class="ornament reveal">我们寻找<strong>这样的你</strong></h2>
+      <div class="orbit" id="traits"></div>
+    </section>
+    <section class="directions">
+      <div class="section-head inset"><h2 class="ornament reveal">技术研究方向</h2><div class="arrows" data-rail="research-rail"></div></div>
+      <div class="rail directions-rail reveal" id="research-rail" aria-label="技术研究方向" tabindex="0"></div>
+    </section>
+    <section class="benefits inset aura">
+      <h2 class="ornament reveal">在这里，<strong>你将可以</strong></h2>
+      <div class="benefit-grid" id="benefit-grid"></div>
+    </section>
+    <section class="models">
+      <div class="section-head inset"><h2 class="reveal">加入我们，<br><strong>你也有机会做出业界领先的工作</strong></h2><div class="arrows" data-rail="model-rail"></div></div>
+      <div class="rail model-rail reveal" id="model-rail" aria-label="模型成果" tabindex="0"></div>
+    </section>
+    <section class="stories inset aura" aria-label="研究者的工作"><div id="voices"></div></section>
+    <section class="faq inset" id="questions">
+      <h2 class="ornament reveal">答疑专区</h2>
+      <div class="faq-tabs" role="tablist" aria-label="招聘类型"><button id="graduate-tab" role="tab" aria-selected="true" aria-controls="answers">应届生招聘</button><button id="intern-tab" role="tab" aria-selected="false" aria-controls="answers">实习生招聘</button></div>
+      <div class="answers" id="answers" role="tabpanel" aria-labelledby="graduate-tab"></div>
+      <a class="email" href="mailto:seedcampus@bytedance.com"><img src="assets/email.svg" alt=""><span>更多问题，欢迎邮件咨询：<b>seedcampus@bytedance.com</b></span><span class="chevron">›</span></a>
+    </section>
+  </main>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-row">
+        <div class="footer-brand"><img src="assets/wordmark.png" alt="ByteDance Seed"><p>追求智能上限，创造社会价值</p><div class="join-code"><img loading="lazy" src="assets/seed-campus.png" alt="Seed 校招官方二维码"><span>欢迎加入字节跳动 Seed</span></div></div>
+        <div class="footer-links"><h3>模型成果</h3><div id="footer-models"></div></div>
+        <div class="footer-links"><h3>了解更多</h3><a href="https://seed.bytedance.com/zh/public_papers">论文</a><a href="https://seed.bytedance.com/zh/seed-edge">Seed Edge</a><a href="https://seed.bytedance.com/zh/seedstem">Seed STEM 科学家计划</a><a href="https://seed.bytedance.com/zh/seedearlycareer">校园招聘</a></div>
+      </div>
+      <div class="credit"><a href="https://seed.bytedance.com/zh/seedearlycareer">视觉研究 · 原版页面与影像 © ByteDance Seed</a><a href="../tree-aurora-wallpaper.html">Cassel 树动态壁纸</a><a href="https://seed.bytedance.com/zh/disclaimer">网站声明</a><a href="mailto:seed.feedback@bytedance.com">联系我们：seed.feedback@bytedance.com</a></div>
+    </div>
+  </footer>
+</body>
+</html>
