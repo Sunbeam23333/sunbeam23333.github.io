@@ -181,16 +181,39 @@ function syncHero(){
 new IntersectionObserver(([entry])=>{heroVisible=entry.isIntersecting;syncHero();}).observe(heroFilm);
 heroFilm.addEventListener('loadedmetadata',syncHero);
 reduced.addEventListener('change',syncHero);document.addEventListener('visibilitychange',syncHero);
-const loadVideo=new IntersectionObserver(entries=>{
-  for(const {target,isIntersecting} of entries)if(isIntersecting){target.src=target.dataset.src;target.preload='metadata';loadVideo.unobserve(target);}
-},{rootMargin:'350px'});
-const autoplay=new IntersectionObserver(entries=>{
-  for(const {target,isIntersecting} of entries){
-    if(!isIntersecting||reduced.matches||document.hidden)target.pause();
-    else target.play().catch(()=>{});
+const modelCards = document.querySelectorAll('.model');
+function loadModelClip(clip) {
+  if (!clip.hasAttribute('src')) {
+    clip.preload = 'metadata';
+    clip.src = clip.dataset.src;
   }
-},{threshold:.25});
-for(const v of document.querySelectorAll('.model video')){loadVideo.observe(v);autoplay.observe(v);}
+}
+const nearbyClips = new IntersectionObserver(entries => {
+  for (const { target, isIntersecting } of entries) {
+    if (isIntersecting) {
+      loadModelClip(target);
+      nearbyClips.unobserve(target);
+    }
+  }
+}, { rootMargin: '350px' });
+function syncModelClip(card) {
+  const clip = card.querySelector('video');
+  if (!document.hidden && !reduced.matches && card.matches(':hover, :focus-visible')) {
+    loadModelClip(clip);
+    clip.play().catch(() => {});
+  } else {
+    clip.pause();
+  }
+}
+for (const card of modelCards) {
+  nearbyClips.observe(card.querySelector('video'));
+  for (const event of ['mouseenter', 'mouseleave', 'focus', 'blur']) {
+    card.addEventListener(event, () => syncModelClip(card));
+  }
+}
+const syncModelClips = () => modelCards.forEach(syncModelClip);
+document.addEventListener('visibilitychange', syncModelClips);
+reduced.addEventListener('change', syncModelClips);
 if(!reduced.matches){
   for (const title of document.querySelectorAll('h2.reveal')) {
     title.setAttribute('aria-label',title.textContent);

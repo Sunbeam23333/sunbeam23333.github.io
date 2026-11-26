@@ -267,15 +267,17 @@ footer { padding:85px 6vw 34px; background:#0a0b0e url("assets/footerv3.png") ce
   .models { min-height:709.68px; }
   .stories { min-height:757.35px; }
   .faq { min-height:1103.71px; }
-  footer { min-height:696px; }
+  footer { min-height:696px; padding-bottom:13px; }
 }
 @media(max-width:766px) {
   .intro p { min-height:273.18px; width:343px; }
   .qualities { min-height:662.38px; } .qualities h2 { line-height:1; }
   .directions { min-height:776.08px; }
+  .directions h2 { line-height:1.29; }
+  .faq h2 { line-height:1.2; }
   .benefits { min-height:1128.91px; }
   .models { min-height:1985.26px; }
-  .stories { min-height:857.51px; }
+  .stories { min-height:857.58px; }
   .faq { min-height:1081.76px; }
   footer { min-height:730px; }
 }
